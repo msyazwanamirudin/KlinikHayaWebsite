@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     // ==========================================
-    // 1. LANGUAGE TOGGLE (Keep existing logic)
+    // 1. LANGUAGE TOGGLE
     // ==========================================
     const languageToggle = document.getElementById('languageToggle');
     const savedLang = localStorage.getItem('clinicLanguage') || 'en';
@@ -28,36 +28,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 2. MODERN SMOOTH SCROLL (The "Slide" Effect)
+    // 2. MODERN SMOOTH SCROLL (For Nav Links)
     // ==========================================
     const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
-    const headerOffset = 100; // Height of your sticky navbar + top bar padding
+    const headerOffset = 100; 
 
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault(); // Stop the "instant jump"
-
-            // Get the target section (e.g., #services)
+            e.preventDefault(); 
             const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
-
-            if (targetElement) {
-                // Calculate position with offset for the sticky header
-                const elementPosition = targetElement.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.scrollY - headerOffset;
-
-                // The actual smooth slide animation
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth"
-                });
-
-                // Close mobile menu if open
-                const navMenu = document.querySelector('.nav-links');
-                if (navMenu.classList.contains('active')) {
-                    navMenu.classList.remove('active');
-                }
-            }
+            smoothScrollTo(targetId); // Use the helper function
         });
     });
 
@@ -71,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
             const sectionHeight = section.clientHeight;
-            // Trigger highlight when 1/3 down the section
             if (pageYOffset >= (sectionTop - headerOffset - 50)) {
                 current = section.getAttribute('id');
             }
@@ -97,3 +76,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ==========================================
+// 5. HELPER FUNCTIONS (For Hero Buttons)
+// ==========================================
+// These must be outside the EventListener so HTML onclick="" works
+
+function smoothScrollTo(targetId) {
+    const targetElement = document.querySelector(targetId);
+    const headerOffset = 100;
+
+    if (targetElement) {
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+        });
+        
+        // Close mobile menu if open
+        const navMenu = document.querySelector('.nav-links');
+        if (navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+        }
+    }
+}
+
+// Function called by "Contact Us" button
+function scrollToContact() {
+    smoothScrollTo('#contact');
+}
+
+// Function called by "Book Appointment" button
+function scrollToBooking() {
+    // If you have a booking section, use #booking. 
+    // If not, use #contact or the WhatsApp link.
+    // Based on your previous code, it seems you want to scroll to #contact or open WhatsApp.
+    
+    // Option A: Scroll to Contact Section
+    smoothScrollTo('#contact'); 
+    
+    // Option B: If you prefer it to open WhatsApp directly:
+    // window.open('https://wa.me/60123499793', '_blank');
+}
