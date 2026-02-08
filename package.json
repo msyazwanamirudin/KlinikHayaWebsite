@@ -1,0 +1,16 @@
+{
+  "name": "klinik-haya-website",
+  "version": "1.0.0",
+  "description": "Website for Klinik Haya 24 Jam",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve",
+    "dev": "serve"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=14.x"
+  }
+}
