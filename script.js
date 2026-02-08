@@ -40,22 +40,27 @@ document.addEventListener('DOMContentLoaded', function() {
             smoothScrollTo(targetId); // Use the helper function
         });
     });
-
+    
     // ==========================================
-    // 3. SCROLL SPY (Highlight Active Link)
+    // SCROLL SPY (Highlight Active Nav Link)
     // ==========================================
     window.addEventListener('scroll', () => {
         let current = '';
-        const sections = document.querySelectorAll('section, header');
-        
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-list a');
+        const headerOffset = 150; // Adjusts when the highlight triggers
+    
+        // 1. Figure out which section is currently on screen
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
             const sectionHeight = section.clientHeight;
-            if (pageYOffset >= (sectionTop - headerOffset - 50)) {
+            
+            if (pageYOffset >= (sectionTop - headerOffset)) {
                 current = section.getAttribute('id');
             }
         });
-
+    
+        // 2. Add the 'active-link' class to the matching nav button
         navLinks.forEach(link => {
             link.classList.remove('active-link');
             if (link.getAttribute('href').includes(current)) {
@@ -63,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-
+    
     // ==========================================
     // 4. MOBILE MENU TOGGLE
     // ==========================================
