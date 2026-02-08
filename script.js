@@ -1,47 +1,99 @@
 document.addEventListener('DOMContentLoaded', function() {
     
-    // 1. Get the language dropdown
+    // ==========================================
+    // 1. LANGUAGE TOGGLE (Keep existing logic)
+    // ==========================================
     const languageToggle = document.getElementById('languageToggle');
-    
-    // 2. Check if the user already chose a language before (saved in memory)
     const savedLang = localStorage.getItem('clinicLanguage') || 'en';
     
-    // 3. Set the dropdown to the saved language and update text immediately
     if (languageToggle) {
         languageToggle.value = savedLang;
         changeLanguage(savedLang);
         
-        // 4. Listen for when the user changes the dropdown
         languageToggle.addEventListener('change', function() {
             const selectedLang = this.value;
-            localStorage.setItem('clinicLanguage', selectedLang); // Save for next time
+            localStorage.setItem('clinicLanguage', selectedLang);
             changeLanguage(selectedLang);
         });
     }
 
-    // --- The Function that Swaps the Text ---
     function changeLanguage(lang) {
-        // Find ALL elements in the HTML that have a "data-en" tag
         const elementsToTranslate = document.querySelectorAll('[data-en]');
-        
         elementsToTranslate.forEach(element => {
-            // Get the translation from the data attribute (data-en or data-bm)
             const translation = element.getAttribute(`data-${lang}`);
-            
-            // If a translation exists, update the text
             if (translation) {
                 element.textContent = translation;
             }
         });
     }
 
-    // --- Mobile Menu Toggle ---
+    // ==========================================
+    // 2. MODERN SMOOTH SCROLL (The "Slide" Effect)
+    // ==========================================
+    const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+    const headerOffset = 100; // Height of your sticky navbar + top bar padding
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault(); // Stop the "instant jump"
+
+            // Get the target section (e.g., #services)
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+
+            if (targetElement) {
+                // Calculate position with offset for the sticky header
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+                // The actual smooth slide animation
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+
+                // Close mobile menu if open
+                const navMenu = document.querySelector('.nav-links');
+                if (navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                }
+            }
+        });
+    });
+
+    // ==========================================
+    // 3. SCROLL SPY (Highlight Active Link)
+    // ==========================================
+    window.addEventListener('scroll', () => {
+        let current = '';
+        const sections = document.querySelectorAll('section, header');
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            // Trigger highlight when 1/3 down the section
+            if (pageYOffset >= (sectionTop - headerOffset - 50)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active-link');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active-link');
+            }
+        });
+    });
+
+    // ==========================================
+    // 4. MOBILE MENU TOGGLE
+    // ==========================================
     const mobileBtn = document.querySelector('.mobile-menu-btn');
-    const navLinks = document.querySelector('.nav-links');
+    const navMenu = document.querySelector('.nav-links');
     
     if (mobileBtn) {
         mobileBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
+            navMenu.classList.toggle('active');
         });
     }
 });

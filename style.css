@@ -5,15 +5,12 @@
    1. RESET & VARIABLES
    ========================================= */
    :root {
-    /* --- CHANGE THESE 2 CODES TO MATCH YOUR LOGO --- */
-    --primary: #8e52a3;       /* <--- Main Logo Color (Currently Medical Blue) */
-    --primary-dark: #6b4276;  /* <--- A slightly darker shade for hover effects */
+    --primary: #8e52a3;       /*  Main Logo Color */
+    --primary-dark: #6b4276;  /*  A slightly darker shade for hover effects */
     
-    /* Secondary Colors (You can keep these or change them) */
-    --secondary: #F0F7FF;     /* Very Light Background (Matches Blue) */
-    --accent: #FFB74D;        /* Gold/Orange Accent (Good for buttons) */
+    --secondary: #F0F7FF;     /* Very Light Background */
+    --accent: #FFB74D;        /* Gold/Orange Accent */
     
-    /* Neutrals */
     --dark: #2C3E50;          /* Dark Text */
     --grey: #666666;          /* Body Text */
     --light: #F9F9F9;         /* Light Backgrounds */
@@ -379,4 +376,56 @@ img { max-width: 100%; display: block; }
     .doctor-layout { grid-template-columns: 1fr; text-align: center; }
     .journey-grid, .footer-grid { grid-template-columns: 1fr; }
     .journey-step::after { display: none; }
+}
+/* =========================================
+   12. ACTIVE LINK STATE & MOBILE ANIMATION
+   ========================================= */
+
+/* Highlight the link you are currently viewing */
+.nav-links a.active-link {
+    color: var(--primary);
+    font-weight: 700;
+    position: relative;
+}
+
+/* Add a small dot under the active link */
+.nav-links a.active-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background-color: var(--primary);
+    border-radius: 50%;
+}
+
+/* Mobile Menu Slide Animation */
+@media (max-width: 992px) {
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        gap: 20px;
+        box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        
+        /* Hidden state */
+        opacity: 0;
+        transform: translateY(-20px);
+        visibility: hidden;
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Visible state (when Javascript adds .active) */
+    .nav-links.active {
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+    }
 }
