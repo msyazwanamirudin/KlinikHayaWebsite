@@ -1,12 +1,17 @@
 /* =========================================
    1. RESET & VARIABLES
    ========================================= */
+/* =========================================
+   1. RESET & VARIABLES
+   ========================================= */
    :root {
-    /* Brand Colors */
-    --primary: #00897B;       /* Deep Teal */
-    --primary-dark: #00695C;  /* Darker Teal */
-    --secondary: #E0F2F1;     /* Very Light Teal Background */
-    --accent: #FFB74D;        /* Gold/Orange Accent */
+    /* --- CHANGE THESE 2 CODES TO MATCH YOUR LOGO --- */
+    --primary: #8e52a3;       /* <--- Main Logo Color (Currently Medical Blue) */
+    --primary-dark: #6b4276;  /* <--- A slightly darker shade for hover effects */
+    
+    /* Secondary Colors (You can keep these or change them) */
+    --secondary: #F0F7FF;     /* Very Light Background (Matches Blue) */
+    --accent: #FFB74D;        /* Gold/Orange Accent (Good for buttons) */
     
     /* Neutrals */
     --dark: #2C3E50;          /* Dark Text */
