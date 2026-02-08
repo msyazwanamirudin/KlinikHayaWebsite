@@ -1,7 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     // ==========================================
-    // 1. LANGUAGE TOGGLE
+    // 1. GLOBAL VARIABLES
+    // ==========================================
+    const headerOffset = 120; // Adjusts for sticky navbar height
+    
+    // ==========================================
+    // 2. LANGUAGE TOGGLE
     // ==========================================
     const languageToggle = document.getElementById('languageToggle');
     const savedLang = localStorage.getItem('clinicLanguage') || 'en';
@@ -28,51 +33,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 2. SMOOTH SCROLL (Updated for ALL links)
+    // 3. UNIVERSAL SMOOTH SCROLL (LINKS)
     // ==========================================
-    // OLD CODE: const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
-    // NEW CODE: Select ALL links that start with # (Nav + Hero Buttons)
-    const allSmoothLinks = document.querySelectorAll('a[href^="#"]');
+    const allLinks = document.querySelectorAll('a[href^="#"]');
     
-    allSmoothLinks.forEach(link => {
+    allLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault(); 
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
             
-            // Only add 'active' class if this is a Navigation Link
+            // --- FIX: Targeting .nav-links to match HTML ---
             if (this.closest('.nav-links')) {
-                // Remove active from other nav links
                 document.querySelectorAll('.nav-links a').forEach(nav => nav.classList.remove('active'));
                 this.classList.add('active');
             }
-
-            const targetId = this.getAttribute('href');
+            
             smoothScrollTo(targetId);
         });
     });
 
     // ==========================================
-    // 3. SCROLL SPY (Highlight Nav Links Only)
+    // 4. SCROLL SPY (Highlight Nav Menu)
     // ==========================================
     window.addEventListener('scroll', () => {
         let current = '';
         const sections = document.querySelectorAll('section, header');
-        const navLinks = document.querySelectorAll('.nav-links a'); // Only highlight menu items
-        const headerOffset = 150; 
         
-        // Check which section is on screen
+        // --- FIX: Targeting .nav-links to match HTML ---
+        const navLinks = document.querySelectorAll('.nav-links a'); 
+        
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
-            if (pageYOffset >= (sectionTop - headerOffset)) {
+            if (pageYOffset >= (sectionTop - headerOffset - 50)) {
                 current = section.getAttribute('id');
             }
         });
 
-        // Special Check: Are we at the bottom of the page? (For Contact)
+        // Bottom of Page Check
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
             current = 'contact';
         }
 
-        // Apply active class to Nav Links only
         if (current) {
             navLinks.forEach(link => {
                 link.classList.remove('active');
@@ -84,19 +85,59 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // 4. MOBILE MENU TOGGLE
+    // 5. MOBILE MENU TOGGLE
     // ==========================================
     const mobileBtn = document.querySelector('.mobile-menu-btn');
-    const navMenu = document.querySelector('.nav-links');
+    
+    // --- FIX: Targeting .nav-links to match HTML ---
+    const navMenu = document.querySelector('.nav-links'); 
     
     if (mobileBtn) {
         mobileBtn.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
+            // Toggle the class instead of inline styles for cleaner code
+            navMenu.classList.toggle('mobile-active');
+            
+            // Optional: Simple inline toggle if you prefer not adding CSS
+            if (navMenu.style.display === 'flex') {
+                navMenu.style.display = 'none';
+            } else {
+                navMenu.style.display = 'flex';
+                navMenu.style.flexDirection = 'column';
+                navMenu.style.position = 'absolute';
+                navMenu.style.top = '70px';
+                navMenu.style.left = '0';
+                navMenu.style.width = '100%';
+                navMenu.style.background = 'white';
+                navMenu.style.padding = '20px';
+                navMenu.style.boxShadow = '0 10px 10px rgba(0,0,0,0.1)';
+            }
         });
     }
 });
 
 // ==========================================
-// 5. HELPER FUNCTIONS
+// 6. HELPER FUNCTIONS
 // ==========================================
-function smoothScrollTo
+
+function smoothScrollTo(targetId) {
+    const targetElement = document.querySelector(targetId);
+    const headerOffset = 120; 
+
+    if (targetElement) {
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+        });
+    }
+}
+
+function scrollToBooking() {
+    smoothScrollTo('#contact'); 
+}
+
+function scrollToContact() {
+    smoothScrollTo('#contact');
+}
