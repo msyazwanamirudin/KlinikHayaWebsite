@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
 
 // ==========================================
 // 6. HELPER FUNCTIONS
