@@ -3,86 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klinik Haya 24 Jam - Alam Sari & Kajang</title>
+    <title>Klinik Haya 24 Jam - Premium Family & Fertility Care</title>
     <meta name="description" content="Klinik Haya Alam Sari - 24 Hours GP, Women's Health, Fertility (TTC) & Family Care in Kajang.">
     
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <div class="top-bar">
+        <p>Open 24 Hours / 7 Days a Week • Serving Alam Sari, Bangi & Semenyih</p>
+    </div>
+
     <nav class="navbar">
-        <div class="container">
-            <div class="nav-wrapper">
-                <div class="logo">
-                    <img src="img/logo.png" alt="Klinik Haya Logo" style="height: 50px; width: auto;">
-                    <span class="clinic-name">Klinik Haya</span>
-                </div>
-                <div class="nav-menu">
-                    <ul class="nav-list">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="#specialties">Women & Fertility</a></li>
-                        <li><a href="#doctor">Dr. Alia</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div class="nav-actions">
-                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <select class="language-toggle" id="languageToggle">
-                        <option value="en">English</option>
-                        <option value="bm">Bahasa Melayu</option>
-                    </select>
-                </div>
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="Klinik Haya Logo">
+                <span class="logo-text">Klinik Haya</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Treatments</a></li>
+                <li><a href="#doctor">Our Doctor</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <select id="languageToggle">
+                    <option value="en">EN</option>
+                    <option value="bm">BM</option>
+                </select>
+                <a href="https://wa.me/60123499793" target="_blank" class="btn-book">Book Now</a>
+            </div>
+            
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
             </div>
         </div>
     </nav>
 
-    <section class="hero" id="home">
-        <div class="container hero-grid">
+    <header class="hero" id="home">
+        <div class="container hero-wrapper">
             <div class="hero-content">
-                <span class="badge" data-en="Open 24 Hours / 7 Days" data-bm="Buka 24 Jam / 7 Hari">Open 24 Hours / 7 Days</span>
-                <h1 class="hero-title" data-en="Comprehensive Care for Family & Fertility" data-bm="Rawatan Menyeluruh untuk Keluarga & Kesuburan">Comprehensive Care for Family & Fertility</h1>
-                <p class="hero-subtitle" data-en="Your trusted 24-hour clinic in Alam Sari. From general practice to specialized women's health, pregnancy care, and mental wellness." data-bm="Klinik 24 jam dipercayai anda di Alam Sari. Dari rawatan am hingga kesihatan wanita, kehamilan, dan kesejahteraan mental.">Your trusted 24-hour clinic in Alam Sari...</p>
-                <div class="hero-buttons">
-                    <button class="btn btn-primary" onclick="sendWhatsAppBooking()" data-en="Book Appointment" data-bm="Tempah Temu Janji">Book Appointment</button>
-                    <button class="btn btn-secondary" onclick="scrollToContact()" data-en="Visit Us" data-bm="Lawati Kami">Visit Us</button>
+                <span class="subtitle">PREMIUM 24-HOUR CARE</span>
+                <h1 data-en="Comprehensive Healthcare for Family & Fertility" data-bm="Penjagaan Kesihatan Menyeluruh untuk Keluarga & Kesuburan">
+                    Comprehensive Healthcare for Family & Fertility
+                </h1>
+                <p data-en="Experience a new standard of GP care. From fertility (TTC) journeys to pediatric wellness, we are here for you 24/7." data-bm="Alami standard baru rawatan GP. Dari perjalanan kesuburan (TTC) hingga kesejahteraan pediatrik, kami di sini 24/7.">
+                    Experience a new standard of GP care. From fertility (TTC) journeys to pediatric wellness, we are here for you 24/7.
+                </p>
+                <div class="hero-btns">
+                    <a href="https://wa.me/60123499793" class="btn btn-primary">Book Appointment</a>
+                    <a href="#services" class="btn btn-outline">View Services</a>
                 </div>
             </div>
-                <div class="hero-image">
-                    <img src="img/bg.png" alt="Klinik Haya Clinic Image" style="width: 100%; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                </div>
+            <div class="hero-image">
+                <img src="img/bg.png" alt="Klinik Haya Interior">
             </div>
         </div>
-    </section>
+    </header>
 
-    <section class="quick-info">
+    <section class="features" id="about">
         <div class="container">
-            <div class="info-grid">
-                <div class="info-card">
+            <div class="section-header text-center">
+                <h2 data-en="Why Choose Klinik Haya?" data-bm="Kenapa Pilih Klinik Haya?">Why Choose Klinik Haya?</h2>
+                <div class="divider"></div>
+                <p class="section-desc">More than just a clinic. We are your partners in health.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-item">
                     <i class="fas fa-clock"></i>
-                    <h3 data-en="Operating Hours" data-bm="Waktu Operasi">Operating Hours</h3>
-                    <p data-en="Open 24 Hours" data-bm="Buka 24 Jam">Open 24 Hours</p>
-                    <p data-en="Everyday (including PH)" data-bm="Setiap Hari (termasuk Cuti Umum)">Everyday</p>
+                    <h3>24/7 Availability</h3>
+                    <p>Always open, including public holidays.</p>
                 </div>
-                <div class="info-card">
-                    <i class="fas fa-phone-volume"></i>
-                    <h3 data-en="Contact" data-bm="Hubungi">Contact</h3>
-                    <p><a href="tel:0123499793">012-349 9793</a></p>
-                    <p><a href="https://tr.ee/89qO7wBrzD" target="_blank">WhatsApp Us</a></p>
+                <div class="feature-item">
+                    <i class="fas fa-baby-carriage"></i>
+                    <h3>Fertility Focus</h3>
+                    <p>Specialized TTC & Family Planning support.</p>
                 </div>
-                <div class="info-card">
-                    <i class="fas fa-map-location-dot"></i>
-                    <h3 data-en="Location" data-bm="Lokasi">Location</h3>
-                    <p>Setia Emporia, Kajang</p>
-                    <p data-en="Serving Alam Sari, Semenyih & Bangi" data-bm="Melayani Alam Sari, Semenyih & Bangi">Serving Alam Sari, Semenyih & Bangi</p>
+                <div class="feature-item">
+                    <i class="fas fa-female"></i>
+                    <h3>Women's Health</h3>
+                    <p>Private, comfortable care for women.</p>
                 </div>
-                <div class="info-card">
+                <div class="feature-item">
+                    <i class="fas fa-user-md"></i>
+                    <h3>Expert Team</h3>
+                    <p>Led by Dr. Alia Syamim.</p>
+                </div>
+                <div class="feature-item">
                     <i class="fas fa-star"></i>
-                    <h3 data-en="Patient Reviews" data-bm="Ulasan Pesakit">Patient Reviews</h3>
-                    <p><strong>5.0 ⭐</strong></p>
-                    <p data-en="Based on 114 Google Reviews" data-bm="Berdasarkan 114 Ulasan Google">Based on 114 Google Reviews</p>
+                    <h3>5-Star Rated</h3>
+                    <p>Trusted by 100+ families in Kajang.</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>Strategic Location</h3>
+                    <p>Located at Setia Emporia, Kajang.</p>
                 </div>
             </div>
         </div>
@@ -90,170 +113,138 @@
 
     <section class="services" id="services">
         <div class="container">
-            <h2 data-en="Our Services" data-bm="Perkhidmatan Kami">Our Services</h2>
-            <div class="services-grid">
-                <div class="service-card">
-                    <i class="fas fa-baby"></i>
-                    <h3 data-en="Pediatric Care" data-bm="Rawatan Kanak-Kanak">Pediatric Care</h3>
-                    <p data-en="Treatments for babies & children" data-bm="Rawatan untuk bayi & kanak-kanak">Treatments for babies & children</p>
-                </div>
-                <div class="service-card">
-                    <i class="fas fa-person-pregnant"></i>
-                    <h3 data-en="Maternal Health" data-bm="Kesihatan Ibu Hamil">Maternal Health</h3>
-                    <p data-en="Pregnancy checkups & scans" data-bm="Pemeriksaan kehamilan & imbasan">Pregnancy checkups & scans</p>
-                </div>
-                <div class="service-card">
-                    <i class="fas fa-brain"></i>
-                    <h3 data-en="Mental Health" data-bm="Kesihatan Mental">Mental Health</h3>
-                    <p data-en="Consultation & support" data-bm="Konsultasi & sokongan">Consultation & support</p>
-                </div>
-                <div class="service-card">
-                    <i class="fas fa-notes-medical"></i>
-                    <h3 data-en="General Health" data-bm="Kesihatan Am">General Health</h3>
-                    <p data-en="Fever, Flu, Cough & Chronic Disease" data-bm="Demam, Selesema, Batuk & Penyakit Kronik">Fever, Flu, Cough</p>
-                </div>
-                <div class="service-card">
-                    <i class="fas fa-heart-pulse"></i>
-                    <h3 data-en="Health Screening" data-bm="Saringan Kesihatan">Health Screening</h3>
-                    <p data-en="Blood tests & check-ups" data-bm="Ujian darah & pemeriksaan">Blood tests & check-ups</p>
-                </div>
-                <div class="service-card">
-                    <i class="fas fa-syringe"></i>
-                    <h3 data-en="Vaccination" data-bm="Vaksinasi">Vaccination</h3>
-                    <p data-en="Children & Adults immunization" data-bm="Imunisasi kanak-kanak & dewasa">Children & Adults immunization</p>
-                </div>
+            <div class="section-header">
+                <h2 data-en="Our Specializations" data-bm="Kepakaran Kami">Our Specializations</h2>
+                <div class="divider left"></div>
             </div>
-        </div>
-    </section>
-
-    <section class="featured-content" id="specialties">
-        <div class="container">
-            <h2 data-en="Women's Health & Fertility" data-bm="Kesihatan Wanita & Kesuburan">Women's Health & Fertility</h2>
             
-            <div class="featured-item">
-                <div class="featured-text">
-                    <h3 data-en="Fertility & Family Planning" data-bm="Kesuburan & Perancang Keluarga">🌸 Fertility & Family Planning (TTC)</h3>
-                    <p data-en="Trying to conceive? Klinik Haya supports your journey with:" data-bm="Sedang ikhtiar hamil? Klinik Haya menyokong perjalanan anda dengan:">Trying to conceive?</p>
-                    <ul>
-                        <li data-en="Fertility Screening & Tests" data-bm="Saringan & Ujian Kesuburan">✅ Fertility Screening & Tests</li>
-                        <li data-en="Pre-pregnancy Consultation" data-bm="Konsultasi Pra-kehamilan">✅ Pre-pregnancy Consultation</li>
-                        <li data-en="Family Planning Advice" data-bm="Nasihat Perancang Keluarga">✅ Family Planning Advice</li>
-                    </ul>
-                    <button class="btn btn-primary" onclick="sendWhatsAppBooking()" data-en="Book Fertility Consult" data-bm="Tempah Konsultasi">Book Fertility Consult</button>
-                </div>
-                <div class="featured-image">
-                     <div class="img-placeholder-feature"><i class="fas fa-seedling"></i></div>
-                </div>
-            </div>
-
-            <div class="featured-item reverse">
-                <div class="featured-image">
-                    <div class="img-placeholder-feature"><i class="fas fa-person-breastfeeding"></i></div>
-                </div>
-                <div class="featured-text">
-                    <h3 data-en="Women's Wellness & Breastfeeding" data-bm="Kesejahteraan Wanita & Penyusuan">🤱 Women's Wellness & Breastfeeding</h3>
-                    <p data-en="We provide dedicated care for women at all stages of life:" data-bm="Kami menyediakan penjagaan khusus untuk wanita di setiap peringkat kehidupan:">Dedicated care for women:</p>
-                    <ul>
-                        <li data-en="Breastfeeding Support" data-bm="Sokongan Penyusuan Ibu">✅ Breastfeeding Support</li>
-                        <li data-en="Menopause Management" data-bm="Pengurusan Menopaus">✅ Menopause Management</li>
-                        <li data-en="Pap Smear & Women's Screening" data-bm="Pap Smear & Saringan Wanita">✅ Pap Smear & Women's Screening</li>
+            <div class="service-grid">
+                <div class="service-card">
+                    <div class="card-icon"><i class="fas fa-seedling"></i></div>
+                    <h3>Fertility (TTC)</h3>
+                    <ul class="service-list">
+                        <li>Fertility Screening</li>
+                        <li>Pre-pregnancy Check</li>
+                        <li>Follicle Scanning</li>
                     </ul>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="doctors" id="doctor">
-        <div class="container">
-            <h2 data-en="Meet Our Doctor" data-bm="Bertemu Doktor Kami">Meet Our Doctor</h2>
-            <div class="doctors-grid center-grid">
-                <div class="doctor-card">
-                    <div class="doctor-image">
-                        <div class="img-placeholder-doc"><i class="fas fa-user-md"></i></div>
-                    </div>
-                    <h3>Dr. Alia Syamim Binti Zahari</h3>
-                    <p class="specialty" data-en="Resident Doctor" data-bm="Doktor Residen">Resident Doctor</p>
-                    <p class="bio" data-en="Dedicated to providing holistic family care with a special interest in women's health, fertility, and mental wellness. Dr. Alia ensures every patient feels heard and cared for." data-bm="Berdedikasi untuk memberikan penjagaan keluarga holistik dengan minat khusus dalam kesihatan wanita, kesuburan, dan kesejahteraan mental. Dr. Alia memastikan setiap pesakit didengar dan dijaga.">Dedicated to providing holistic family care...</p>
-                    <div class="doctor-contact">
-                        <a href="https://tr.ee/89qO7wBrzD" class="btn-sm"><i class="fab fa-whatsapp"></i> Appointment</a>
-                    </div>
+                <div class="service-card">
+                    <div class="card-icon"><i class="fas fa-person-breastfeeding"></i></div>
+                    <h3>Maternal Care</h3>
+                    <ul class="service-list">
+                        <li>Antenatal Checkups</li>
+                        <li>Breastfeeding Support</li>
+                        <li>Postnatal Care</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="card-icon"><i class="fas fa-child"></i></div>
+                    <h3>Pediatrics</h3>
+                    <ul class="service-list">
+                        <li>Vaccinations</li>
+                        <li>Growth Monitoring</li>
+                        <li>Acute Illness</li>
+                    </ul>
+                </div>
+
+                <div class="service-card">
+                    <div class="card-icon"><i class="fas fa-stethoscope"></i></div>
+                    <h3>General Health</h3>
+                    <ul class="service-list">
+                        <li>Health Screening</li>
+                        <li>Chronic Disease</li>
+                        <li>Minor Surgery</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="social-hub">
+    <section class="journey">
         <div class="container">
-            <h2 data-en="Connect With Us" data-bm="Hubungi Kami">Connect With Us</h2>
-            <div class="social-links-grid">
-                <a href="https://tr.ee/89qO7wBrzD" target="_blank" class="social-pill whatsapp">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </a>
-                <a href="https://tr.ee/jnV5cTv6XA" target="_blank" class="social-pill instagram">
-                    <i class="fab fa-instagram"></i> Instagram
-                </a>
-                <a href="https://tr.ee/1aSJJXK7HX" target="_blank" class="social-pill tiktok">
-                    <i class="fab fa-tiktok"></i> TikTok
-                </a>
-                <a href="https://tr.ee/9T7W9rwj8X" target="_blank" class="social-pill facebook">
-                    <i class="fab fa-facebook"></i> Facebook
-                </a>
-                <a href="https://tr.ee/0YqoMMBvu8" target="_blank" class="social-pill threads">
-                    <i class="fa-brands fa-threads"></i> Threads
-                </a>
+            <div class="section-header text-center">
+                <h2>Your Health Journey</h2>
+                <p>Simple steps to better health</p>
             </div>
-        </div>
-    </section>
-
-    <section class="booking" id="contact">
-        <div class="container">
-            <div class="contact-layout">
-                <div class="contact-info-col">
-                    <h2 data-en="Visit Klinik Haya" data-bm="Lawati Klinik Haya">Visit Klinik Haya</h2>
-                    <p><strong>Address:</strong><br>20-1, Jalan Sari Niaga, Setia Emporia,<br>43000 Kajang, Selangor</p>
-                    <p><strong>Email:</strong><br><a href="mailto:klinikhaya@gmail.com">klinikhaya@gmail.com</a></p>
-                    <p><strong>Phone:</strong><br><a href="tel:0123499793">012-349 9793</a></p>
-                    
-                    <div class="map-container">
-                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3984.444738528994!2d101.7876123!3d2.9739462!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cdb5e1975b7f03%3A0x6b48592985f40f3c!2sSetia%20Emporia!5e0!3m2!1sen!2smy!4v1700000000000!5m2!1sen!2smy" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
+            
+            <div class="journey-grid">
+                <div class="journey-step">
+                    <div class="step-num">01</div>
+                    <h3>Consultation</h3>
+                    <p>Meet Dr. Alia for a personalized assessment of your health needs.</p>
                 </div>
-
-                <div class="booking-form-col">
-                    <h3 data-en="Send us a Message" data-bm="Hantar Mesej">Send us a Message</h3>
-                    <form id="bookingForm">
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" name="fullName" required placeholder="Your Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Service</label>
-                            <select name="service">
-                                <option value="General">General Consultation</option>
-                                <option value="Women Health">Women's Health</option>
-                                <option value="Fertility/TTC">Fertility / TTC</option>
-                                <option value="Baby/Child">Baby & Child</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Message</label>
-                            <textarea name="message" rows="3" placeholder="I would like to ask about..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary full-width">
-                            <i class="fab fa-whatsapp"></i> <span data-en="Start Chat" data-bm="Mula Sembang">Start Chat</span>
-                        </button>
-                    </form>
+                <div class="journey-step">
+                    <div class="step-num">02</div>
+                    <h3>Treatment</h3>
+                    <p>Receive professional care using modern medical equipment.</p>
+                </div>
+                <div class="journey-step">
+                    <div class="step-num">03</div>
+                    <h3>Care</h3>
+                    <p>Continuous support and follow-up to ensure your recovery.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 Klinik Haya 24 Jam. All rights reserved.</p>
-            <p class="footer-tagline" data-en="Your Trusted Family & Women's Health Clinic" data-bm="Klinik Keluarga & Kesihatan Wanita Dipercayai Anda">Your Trusted Family & Women's Health Clinic</p>
+    <section class="doctor" id="doctor">
+        <div class="container doctor-layout">
+            <div class="doctor-img">
+                <div class="img-placeholder"><i class="fas fa-user-md"></i></div>
+            </div>
+            <div class="doctor-info">
+                <span class="subtitle">RESIDENT DOCTOR</span>
+                <h2>Dr. Alia Syamim Binti Zahari</h2>
+                <p class="lead">Dedicated to holistic family wellness.</p>
+                <p>Dr. Alia brings passion and expertise to Klinik Haya, with a special focus on women's health, fertility, and mental wellness. She believes in treating the patient, not just the disease.</p>
+                <div class="awards">
+                    <div class="award-item"><i class="fas fa-certificate"></i> Certified Medical Practitioner</div>
+                    <div class="award-item"><i class="fas fa-heart"></i> Women's Health Advocate</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer" id="contact">
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h3>Klinik Haya</h3>
+                <p>Your trusted 24-hour clinic in Alam Sari committed to providing comprehensive medical care for the whole family.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-tiktok"></i></a>
+                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-col">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#services">Treatments</a></li>
+                    <li><a href="#doctor">Our Doctor</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-map-marker-alt"></i> 20-1, Jalan Sari Niaga,<br>Setia Emporia, 43000 Kajang</p>
+                <p><i class="fas fa-phone"></i> 012-349 9793</p>
+                <p><i class="fas fa-envelope"></i> klinikhaya@gmail.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Klinik Haya 24 Jam. All Rights Reserved.</p>
         </div>
     </footer>
+
+    <a href="https://wa.me/60123499793" class="float-whatsapp" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <script src="script.js"></script>
 </body>
