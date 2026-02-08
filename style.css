@@ -484,16 +484,52 @@ img { max-width: 100%; display: block; }
     color: white !important;
 }
 
-/* Responsive: Stack columns on mobile */
+/* =========================================
+   RESPONSIVE & MOBILE MENU
+   ========================================= */
 @media (max-width: 992px) {
-    .footer-grid {
-        grid-template-columns: 1fr 1fr; /* 2x2 grid on tablets */
-    }
-}
+    /* 1. Adjust Layouts for Mobile */
+    .hero { background: var(--white); text-align: center; }
+    .hero-wrapper { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2.5rem; }
+    .hero-content p { margin: 0 auto 30px; }
+    .doctor-layout { grid-template-columns: 1fr; text-align: center; }
+    .journey-grid, .footer-grid { grid-template-columns: 1fr; }
+    .journey-step::after { display: none; }
 
-@media (max-width: 768px) {
-    .footer-grid {
-        grid-template-columns: 1fr; /* 1 column on mobile */
-        gap: 40px;
+    /* 2. Hide Desktop Actions (Language & Book Button in header) */
+    .nav-actions { display: none; }
+    
+    /* 3. Show Hamburger Button */
+    .mobile-menu-btn { display: block; cursor: pointer; font-size: 1.5rem; }
+
+    /* 4. Mobile Menu Styling */
+    .nav-links {
+        /* Layout & Position */
+        position: absolute;
+        top: 100%; /* Push it right below the navbar */
+        left: 0;
+        width: 100%;
+        background: var(--white);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        gap: 20px;
+        box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        z-index: 1000;
+
+        /* Hidden State (Default) */
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-20px);
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* 5. Visible State (When 'active' class is added by JS) */
+    .nav-links.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
     }
 }

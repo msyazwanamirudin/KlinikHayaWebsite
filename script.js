@@ -88,32 +88,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // 5. MOBILE MENU TOGGLE
     // ==========================================
     const mobileBtn = document.querySelector('.mobile-menu-btn');
-    
-    // --- FIX: Targeting .nav-links to match HTML ---
     const navMenu = document.querySelector('.nav-links'); 
     
-    if (mobileBtn) {
+    if (mobileBtn && navMenu) {
         mobileBtn.addEventListener('click', () => {
-            // Toggle the class instead of inline styles for cleaner code
-            navMenu.classList.toggle('mobile-active');
-            
-            // Optional: Simple inline toggle if you prefer not adding CSS
-            if (navMenu.style.display === 'flex') {
-                navMenu.style.display = 'none';
-            } else {
-                navMenu.style.display = 'flex';
-                navMenu.style.flexDirection = 'column';
-                navMenu.style.position = 'absolute';
-                navMenu.style.top = '70px';
-                navMenu.style.left = '0';
-                navMenu.style.width = '100%';
-                navMenu.style.background = 'white';
-                navMenu.style.padding = '20px';
-                navMenu.style.boxShadow = '0 10px 10px rgba(0,0,0,0.1)';
-            }
+            // Simply toggle the 'active' class
+            // This matches the .nav-links.active selector in your CSS
+            navMenu.classList.toggle('active');
+        });
+
+        // Optional: Close menu when a link is clicked
+        const menuLinks = navMenu.querySelectorAll('a');
+        menuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('active');
+            });
         });
     }
-});
 
 // ==========================================
 // 6. HELPER FUNCTIONS
