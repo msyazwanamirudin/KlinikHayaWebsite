@@ -1,12 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     
+    // CONFIGURATION
+    const headerOffset = 120; // Height of sticky navbar + buffer
+
     // ==========================================
-    // 1. GLOBAL VARIABLES
-    // ==========================================
-    const headerOffset = 120; // Adjusts for sticky navbar height
-    
-    // ==========================================
-    // 2. LANGUAGE TOGGLE
+    // 1. LANGUAGE TOGGLE
     // ==========================================
     const languageToggle = document.getElementById('languageToggle');
     const savedLang = localStorage.getItem('clinicLanguage') || 'en';
@@ -33,8 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 3. UNIVERSAL SMOOTH SCROLL (LINKS)
+    // 2. SMOOTH SCROLL & ACTIVE STATE
     // ==========================================
+    // Logic for ALL links starting with #
     const allLinks = document.querySelectorAll('a[href^="#"]');
     
     allLinks.forEach(link => {
@@ -42,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const targetId = this.getAttribute('href');
             
-            // --- FIX: Targeting .nav-links to match HTML ---
+            // If it's a menu link, highlight it
             if (this.closest('.nav-links')) {
                 document.querySelectorAll('.nav-links a').forEach(nav => nav.classList.remove('active'));
                 this.classList.add('active');
@@ -53,13 +52,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // 4. SCROLL SPY (Highlight Nav Menu)
+    // 3. SCROLL SPY (Auto-highlight menu)
     // ==========================================
     window.addEventListener('scroll', () => {
         let current = '';
         const sections = document.querySelectorAll('section, header');
-        
-        // --- FIX: Targeting .nav-links to match HTML ---
         const navLinks = document.querySelectorAll('.nav-links a'); 
         
         sections.forEach(section => {
@@ -69,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Bottom of Page Check
+        // "Bottom of Page" Check (For Contact)
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
             current = 'contact';
         }
@@ -85,21 +82,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // 5. MOBILE MENU TOGGLE
+    // 4. MOBILE MENU
     // ==========================================
     const mobileBtn = document.querySelector('.mobile-menu-btn');
     const navMenu = document.querySelector('.nav-links'); 
     
     if (mobileBtn && navMenu) {
         mobileBtn.addEventListener('click', () => {
-            // Simply toggle the 'active' class
-            // This matches the .nav-links.active selector in your CSS
             navMenu.classList.toggle('active');
         });
 
-        // Optional: Close menu when a link is clicked
-        const menuLinks = navMenu.querySelectorAll('a');
-        menuLinks.forEach(link => {
+        // Close menu when a link inside it is clicked
+        navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navMenu.classList.remove('active');
             });
@@ -108,9 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// 6. HELPER FUNCTIONS
+// 5. HELPER FUNCTIONS (Global)
 // ==========================================
 
+// Global smooth scroll function
 function smoothScrollTo(targetId) {
     const targetElement = document.querySelector(targetId);
     const headerOffset = 120; 
@@ -126,6 +121,7 @@ function smoothScrollTo(targetId) {
     }
 }
 
+// Linked to HTML buttons (Book Now / Contact)
 function scrollToBooking() {
     smoothScrollTo('#contact'); 
 }
