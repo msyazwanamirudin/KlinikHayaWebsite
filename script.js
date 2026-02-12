@@ -92,7 +92,7 @@ function bookViaWhatsApp(serviceName, details = "") {
 
     if (!confirmAction) return;
 
-    const phone = "60135253503";
+    const phone = "60172032048";
     let message = `Hi Klinik Haya, I would like to book an appointment.`;
 
     if (serviceName) {
@@ -108,13 +108,20 @@ function bookViaWhatsApp(serviceName, details = "") {
     window.open(url, '_blank');
 }
 
-// --- Chat Bot Logic ---
+// --- Chat Bot Logic (Advanced) ---
+let chatState = {
+    step: 0,
+    flow: null, // 'dengue', 'fever', 'general'
+    answers: []
+};
+
 function toggleChat() {
     const chat = document.getElementById('chatWindow');
     if (chat.style.display === 'flex') {
         chat.style.display = 'none';
     } else {
         chat.style.display = 'flex';
+        // Reset if opening effectively for first time? No, keep history.
     }
 }
 
@@ -142,64 +149,164 @@ function removeTyping() {
     if (indicator) indicator.remove();
 }
 
-// Expanded Chat Logic
+// Main Logic
 function handleUserChoice(choice) {
-    // Remove quick replies
+    // Remove old options
     const qr = document.getElementById('quickReplies');
     if (qr) qr.remove();
-    // Note: In a real app we might just hide them or disable them
 
     // User Message
     addMessage(choice, true);
 
-    // Bot Logic
+    // Bot Thinking
     showTyping();
 
     setTimeout(() => {
         removeTyping();
+        processChatFlow(choice);
+    }, 800);
+}
 
+function processChatFlow(choice) {
+    // 1. Initial Selection
+    if (chatState.flow === null) {
         if (choice === 'Check Symptoms') {
-            addMessage("I can help with that. Are you experiencing any urgent pain, bleeding, or breathing difficulties?");
-            addQuickReplies(['Yes, Severe Pain/Bleeding', 'No, Just Mild Discomfort', 'Fever/Cough']);
+            addMessage("I can help assess your condition. What seems to be the main issue?");
+            addQuickReplies(['High Fever (Dengue?)', 'General Fever/Flu', 'Other Symptoms']);
+        } else if (choice === 'High Fever (Dengue?)') {
+            startFlow('dengue');
+        } else if (choice === 'General Fever/Flu') {
+            startFlow('fever');
+        } else if (choice === 'Other Symptoms') {
+            startFlow('general');
+        } else if (choice === 'Book Appointment') {
+            bookViaWhatsApp('General Booking');
+        } else if (choice === 'Fertility Info') {
+            addMessage("Dr. Alia is our fertility expert. Connect with us for a Follicle Scan (RM60).");
+            addQuickReplies(['Book Scan', 'Chat with Specialist']);
+        } else if (choice === 'Book Scan') {
+            bookViaWhatsApp('Follicle Scan');
+        } else if (choice === 'Chat with Specialist') {
+            bookViaWhatsApp('Fertility Inquiry');
+        } else {
+            // Reset / Default
+            addMessage("How can I help you today?");
+            addQuickReplies(['Check Symptoms', 'Book Appointment', 'Fertility Info']);
         }
-        else if (choice === 'Yes, Severe Pain/Bleeding') {
-            addMessage("<b class='text-danger'>Please go to the nearest Emergency Room or Hospital immediately.</b> Our clinic is a GP setting and may not be equipped for critical emergencies.");
-            addQuickReplies(['Call 999', 'Call Clinic for Advice']);
-        }
-        else if (choice === 'No, Just Mild Discomfort' || choice === 'Fever/Cough') {
-            addMessage("It sounds like you should see a doctor soon. Our wait time is currently under 15 minutes. Would you like to book a slot?");
-            addQuickReplies(['Book Slot', 'Just Walk-In']);
-        }
-        else if (choice === 'Book Slot') {
-            bookViaWhatsApp('General Sickness');
-        }
+        return;
+    }
 
-        else if (choice === 'Fertility Info') {
-            addMessage("Dr. Alia is a specialist in TTC journeys. We offer:");
-            addMessage("1. <b>Follicle Tracking</b> (RM60/scan)<br>2. <b>Full Fertility Screen</b> (RM250)<br>3. <b>IUI Counseling</b>");
-            addMessage("Which one are you interested in?");
-            addQuickReplies(['Follicle Scan', 'Full Screening', 'Just asking']);
-        }
-        else if (choice === 'Follicle Scan' || choice === 'Full Screening') {
-            addMessage("Excellent choice. I'm opening WhatsApp for you to choose your preferred date.");
-            setTimeout(() => bookViaWhatsApp(choice), 2000);
-        }
+    // 2. In-Flow Logic
+    chatState.answers.push(choice);
+    chatState.step++;
+    nextQuestion();
+}
 
-        else if (choice === 'Book Appointment') {
-            addMessage("What type of appointment involves?");
-            addQuickReplies(['General Health', 'Antenatal Checkup', 'Vaccination', 'Others']);
-        }
-        else if (['General Health', 'Antenatal Checkup', 'Vaccination', 'Others'].includes(choice)) {
-            addMessage(`Noted on ${choice}. Connecting you to our admin...`);
-            setTimeout(() => bookViaWhatsApp(choice), 1500);
-        }
+function startFlow(flowType) {
+    chatState.flow = flowType;
+    chatState.step = 0;
+    chatState.answers = [];
+    nextQuestion();
+}
 
-        else {
-            addMessage("Is there anything else I can help you with?");
-            addQuickReplies(['Check Symptoms', 'Book Appointment']);
-        }
+function nextQuestion() {
+    const step = chatState.step;
+    const flow = chatState.flow;
 
-    }, 1000);
+    // --- DENGUE FLOW ---
+    if (flow === 'dengue') {
+        const questions = [
+            "Do you have a sudden high fever (taken via thermometer)?",
+            "Are you experiencing severe headache or pain behind the eyes?",
+            "Do you feel severe joint and muscle pain?",
+            "Have you noticed any skin rash or red spots?",
+            "Any bleeding from the nose or gums?"
+        ];
+
+        if (step < questions.length) {
+            addMessage(questions[step]);
+            addQuickReplies(['Yes', 'No']);
+        } else {
+            finishFlow("Dengue Check");
+        }
+    }
+
+    // --- FEVER FLOW ---
+    else if (flow === 'fever') {
+        const questions = [
+            "How long have you had the fever?",
+            "Is the fever above 38°C?",
+            "Do you have a cough or sore throat?",
+            "Are you experiencing difficulty breathing?",
+            "Are you able to eat and drink normally?"
+        ];
+
+        const options = [
+            ['< 2 Days', '> 3 Days'],
+            ['Yes', 'No'],
+            ['Yes', 'No'],
+            ['Yes', 'No'],
+            ['Yes', 'No']
+        ];
+
+        if (step < questions.length) {
+            addMessage(questions[step]);
+            addQuickReplies(options[step]);
+        } else {
+            finishFlow("Fever Check");
+        }
+    }
+
+    // --- GENERAL FLOW ---
+    else if (flow === 'general') {
+        const questions = [
+            "Are you in severe pain right now (Scale 7-10)?",
+            "Do you have any known drug allergies?",
+            "Have you taken any medication for this today?",
+            "Is this a recurring issue?",
+            "Are you pregnant or breastfeeding?"
+        ];
+
+        if (step < questions.length) {
+            addMessage(questions[step]);
+            addQuickReplies(['Yes', 'No']);
+        } else {
+            finishFlow("General Assessment");
+        }
+    }
+}
+
+function finishFlow(flowName) {
+    addMessage("Thank you. Based on your answers, we recommend assessing this in person.");
+    addMessage("I have prepared your report. Click below to send it to our doctor via WhatsApp and book a priority slot.");
+
+    // Construct Report
+    let report = `*AI Assessment Report: ${flowName}*\n`;
+    chatState.answers.forEach((ans, i) => {
+        report += `Q${i + 1}: ${ans}\n`;
+    });
+
+    // Reset State
+    chatState.flow = null;
+    chatState.step = 0;
+    chatState.answers = [];
+
+    // Custom Button for Final Action
+    const chatBody = document.getElementById('chatBody');
+    const div = document.createElement('div');
+    div.className = 'quick-replies';
+    div.id = 'quickReplies';
+
+    const btn = document.createElement('div');
+    btn.className = 'chip';
+    btn.style.background = '#0F766E';
+    btn.style.color = 'white';
+    btn.innerText = "📅 Book with Report";
+    btn.onclick = () => bookViaWhatsApp('AI Assessment', report);
+
+    div.appendChild(btn);
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 function addQuickReplies(options) {

@@ -455,6 +455,77 @@ h4,
     border: 2px solid white;
 }
 
+/* --- Back To Top --- */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    /* Moved to Left */
+    width: 50px;
+    height: 50px;
+    background: var(--dark);
+    color: white;
+    border-radius: 50%;
+    text-decoration: none;
+    z-index: 1039;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    font-size: 1.2rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    background: var(--primary);
+    transform: translateY(-5px);
+    color: white;
+}
+
+/* --- Map Container --- */
+.map-container iframe {
+    filter: grayscale(100%) invert(92%) contrast(83%);
+    transition: 0.3s;
+}
+
+.map-container:hover iframe {
+    filter: none;
+}
+
+/* --- Facilities Gallery --- */
+.facility-img {
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.facility-img:hover {
+    transform: scale(0.98);
+}
+
+.facility-img img {
+    transition: 0.5s;
+}
+
+.facility-img:hover img {
+    transform: scale(1.1);
+}
+
+.img-caption {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
 .chat-window {
     position: fixed;
     bottom: 110px;
