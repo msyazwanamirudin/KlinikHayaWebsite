@@ -525,14 +525,12 @@ function finishBooking() {
     btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send to WhatsApp';
     btn.onclick = () => window.open(waUrl, '_blank');
 
-    // Menu Button (Infinite Loop)
+    // Menu Button (Infinite Loop -> Reset)
     const menuBtn = document.createElement('div');
     menuBtn.className = 'chip';
     menuBtn.innerText = "Main Menu";
     menuBtn.onclick = () => {
-        chatState.flow = null;
-        addMessage("What else can I do for you?");
-        addMainMenu();
+        resetChat(); // Clear screen for a fresh start
     };
 
     div.appendChild(btn);
