@@ -495,47 +495,97 @@ function addRosterRule() {
     const doc = document.getElementById('rosterDocSelect').value;
     const shift = document.getElementById('rosterShift').value;
 
-    let newRule = { doc, shift };
+    let newRulesToAdd = [];
 
     if (isWeekly) {
-        newRule.type = 'weekly';
-        newRule.day = parseInt(document.getElementById('rosterDay').value);
+        newRulesToAdd.push({
+            type: 'weekly',
+            day: parseInt(document.getElementById('rosterDay').value),
+            doc, shift
+        });
     } else {
-        const dateVal = document.getElementById('rosterDate').value;
-        if (!dateVal) return alert("Please select a date");
-        newRule.type = 'date';
-        newRule.date = dateVal;
+        const startDateVal = document.getElementById('rosterDateStart').value;
+        const endDateVal = document.getElementById('rosterDateEnd').value;
+
+        if (!startDateVal) return alert("Please select a date");
+
+        if (endDateVal && endDateVal < startDateVal) {
+            return alert("End date cannot be before start date");
+        }
+
+        if (endDateVal) {
+            // Range Logic
+            let curr = new Date(startDateVal);
+            const end = new Date(endDateVal);
+            // Safety Limit: Max 30 days range
+            const diffTime = Math.abs(end - curr);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 31) return alert("Range too large. Max 31 days allowed.");
+
+            while (curr <= end) {
+                newRulesToAdd.push({
+                    type: 'date',
+                    date: curr.toISOString().split('T')[0],
+                    doc, shift
+                });
+                curr.setDate(curr.getDate() + 1);
+            }
+        } else {
+            // Single Date
+            newRulesToAdd.push({
+                type: 'date',
+                date: startDateVal,
+                doc, shift
+            });
+        }
     }
 
     firebaseLoad('roster/rules', []).then(rules => {
-        // Validation Logic
-        let existingIndex = -1;
+        let conflicts = [];
+        let duplicates = [];
 
-        if (newRule.type === 'weekly') {
-            existingIndex = rules.findIndex(r => r.type === 'weekly' && r.day === newRule.day);
-        } else {
-            existingIndex = rules.findIndex(r => r.type === 'date' && r.date === newRule.date);
-        }
-
-        if (existingIndex !== -1) {
-            const existing = rules[existingIndex];
-
-            // Scenario 1: Same Doctor, Same Date/Day (Duplicate)
-            if (existing.doc === newRule.doc) {
-                alert(`Error: ${existing.doc} is already assigned to this slot (${existing.shift}).\nCannot duplicate.`);
-                return;
+        // Check conflicts for ALL new rules
+        newRulesToAdd.forEach(newRule => {
+            let existingIndex = -1;
+            if (newRule.type === 'weekly') {
+                existingIndex = rules.findIndex(r => r.type === 'weekly' && r.day === newRule.day);
+            } else {
+                existingIndex = rules.findIndex(r => r.type === 'date' && r.date === newRule.date);
             }
 
-            // Scenario 2: Different Doctor, Same Date/Day (Conflict)
-            const confirmOverwrite = confirm(`Conflict: This slot is currently assigned to ${existing.doc} (${existing.shift}).\n\nOverwrite with ${newRule.doc}?`);
-            if (!confirmOverwrite) return;
+            if (existingIndex !== -1) {
+                const existing = rules[existingIndex];
+                if (existing.doc === newRule.doc) {
+                    duplicates.push(`${newRule.date || 'Day ' + newRule.day} (${existing.shift})`);
+                } else {
+                    conflicts.push(`${newRule.date || 'Day ' + newRule.day}: ${existing.doc} -> ${newRule.doc}`);
+                }
+            }
+        });
 
-            // If confirmed, we replace (filter out old)
-            rules.splice(existingIndex, 1);
+        if (duplicates.length > 0) {
+            alert(`Error: Duplicate assignments found for ${doc}:\n` + duplicates.slice(0, 3).join('\n') + (duplicates.length > 3 ? '\n...' : ''));
+            return;
         }
 
-        // Add New Rule
-        rules.push(newRule);
+        if (conflicts.length > 0) {
+            const confirmOverwrite = confirm(`Found ${conflicts.length} conflicts:\n` + conflicts.slice(0, 3).join('\n') + (conflicts.length > 3 ? '\n...' : '') + `\n\nOverwrite multiple?`);
+            if (!confirmOverwrite) return;
+        }
+
+        // Apply Changes:
+        // 1. Filter out old conflicting rules
+        rules = rules.filter(existing => {
+            const isConflict = newRulesToAdd.some(newRule => {
+                if (newRule.type === 'weekly' && existing.type === 'weekly' && newRule.day === existing.day) return true;
+                if (newRule.type === 'date' && existing.type === 'date' && newRule.date === existing.date) return true;
+                return false;
+            });
+            return !isConflict; // Keep if NO conflict
+        });
+
+        // 2. Add all new rules
+        rules.push(...newRulesToAdd);
 
         firebaseSave('roster/rules', rules).then(() => {
             toggleRosterForm();
