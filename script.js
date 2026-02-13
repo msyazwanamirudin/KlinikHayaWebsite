@@ -144,7 +144,22 @@ function updateLiveStatus() {
 // --- ADVANCED ADMIN SYSTEM (LocalStorage CMS) ---
 let clickCount = 0;
 let clickTimer = null;
-const ADMIN_PIN = "8888";
+
+// Security Constants
+// Simple Hash for "8888" -> 1583002
+// To change PIN: Run simpleHash("NEW_PIN") in console and update this value.
+const ADMIN_HASH = 1583002;
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_TIME = 5 * 60 * 1000; // 5 Minutes
+
+// Simple Hash Function (DJB2 variant)
+function simpleHash(str) {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i); /* hash * 33 + c */
+    }
+    return hash;
+}
 
 // Data: Registered Doctors
 const DOCTORS = [
@@ -156,7 +171,18 @@ const DOCTORS = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Admin Trigger
+    // 1. Security: Disable Right Click & Inspect Shortcuts
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', function (event) {
+        // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+        if (event.key === 'F12' ||
+            (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J')) ||
+            (event.ctrlKey && event.key === 'u')) {
+            event.preventDefault();
+        }
+    });
+
+    // 2. Admin Trigger (Hidden in Copyright)
     const trigger = document.getElementById('adminTrigger');
     if (trigger) {
         trigger.addEventListener('click', () => {
@@ -170,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Initialize Logic
+    // 3. Initialize Logic
     populateDoctorSelect();
     renderRosterRules();
     loadPromo(); // Ensure this runs on load
@@ -223,12 +249,43 @@ function closeAdminModal() {
 }
 
 function verifyAdminPin() {
-    if (document.getElementById('adminPinInput').value === ADMIN_PIN) {
+    const errorMsg = document.getElementById('pinError');
+    const input = document.getElementById('adminPinInput').value;
+
+    // Check Lockout
+    const lockout = JSON.parse(localStorage.getItem('adminLockout') || '{}');
+    if (lockout.active && Date.now() < lockout.until) {
+        const remaining = Math.ceil((lockout.until - Date.now()) / 60000);
+        errorMsg.style.display = 'block';
+        errorMsg.innerText = `System Locked. Try again in ${remaining} mins.`;
+        return;
+    }
+
+    // Verify Hash
+    if (simpleHash(input) === ADMIN_HASH) {
+        // Success
         document.getElementById('adminPinScreen').style.display = 'none';
         document.getElementById('adminControlScreen').style.display = 'block';
         renderRosterRules(); // Refresh list
+
+        // Reset Attempts
+        localStorage.removeItem('adminLockout');
+        localStorage.removeItem('adminAttempts');
     } else {
-        document.getElementById('pinError').style.display = 'block';
+        // Failure
+        let attempts = parseInt(localStorage.getItem('adminAttempts') || 0) + 1;
+        localStorage.setItem('adminAttempts', attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+            const unlockTime = Date.now() + LOCKOUT_TIME;
+            localStorage.setItem('adminLockout', JSON.stringify({ active: true, until: unlockTime }));
+            errorMsg.innerText = "Too many attempts. System Locked for 5 mins.";
+        } else {
+            errorMsg.innerText = `Invalid PIN. ${MAX_ATTEMPTS - attempts} attempts remaining.`;
+        }
+
+        errorMsg.style.display = 'block';
+        document.getElementById('adminPinInput').value = '';
     }
 }
 
