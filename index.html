@@ -870,7 +870,11 @@
                                     <!-- Add Rule Form -->
                                     <div id="rosterForm" class="bg-light p-3 rounded mb-3 border shadow-sm"
                                         style="display: none;">
-                                        <h6 class="fw-bold mb-2">New Schedule Rule</h6>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold mb-0">New Schedule Rule</h6>
+                                            <button type="button" class="btn-close" aria-label="Close"
+                                                onclick="toggleRosterForm()"></button>
+                                        </div>
 
                                         <!-- Rule Type Toggle -->
                                         <div class="btn-group w-100 mb-2" role="group">

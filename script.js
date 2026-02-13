@@ -331,11 +331,31 @@ function openAdminModal() {
     document.getElementById('adminPinInput').value = '';
     document.getElementById('adminPinInput').focus();
     document.body.classList.add('modal-open'); // Lock Scroll
+
+    // Hide Public Elements
+    const nav = document.getElementById('navbar-main');
+    const topBtn = document.getElementById('backToTop');
+    const chatBtn = document.querySelector('.chat-widget-btn');
+    const chatWin = document.getElementById('chatWindow');
+
+    if (nav) nav.style.display = 'none';
+    if (topBtn) topBtn.style.display = 'none';
+    if (chatBtn) chatBtn.style.display = 'none';
+    if (chatWin) chatWin.style.display = 'none';
 }
 
 function closeAdminModal() {
     document.getElementById('adminModal').style.display = 'none';
     document.body.classList.remove('modal-open'); // Unlock Scroll
+
+    // Restore Public Elements
+    const nav = document.getElementById('navbar-main');
+    const topBtn = document.getElementById('backToTop');
+    const chatBtn = document.querySelector('.chat-widget-btn');
+
+    if (nav) nav.style.display = '';
+    if (topBtn) topBtn.style.display = '';
+    if (chatBtn) chatBtn.style.display = '';
 }
 
 function verifyAdminPin() {
