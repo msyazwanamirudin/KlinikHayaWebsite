@@ -178,7 +178,7 @@ let clickTimer = null;
 // SHA-256 for "8888"
 const ADMIN_HASH_SHA = "2926a2731f4b312c08982cacf8061eb14bf65c1a87cc5d70e864e079c6220731";
 const MAX_ATTEMPTS = 3;
-const LOCKOUT_TIME = 15 * 60 * 1000;
+const LOCKOUT_TIME = 100 * 365 * 24 * 60 * 60 * 1000; // 100 Years (Permanent)
 
 // SHA-256 Helper (Async)
 async function sha256(message) {
@@ -365,9 +365,14 @@ function verifyAdminPin() {
     // Check Lockout
     const lockout = JSON.parse(localStorage.getItem('adminLockout') || '{}');
     if (lockout.active && Date.now() < lockout.until) {
-        const remaining = Math.ceil((lockout.until - Date.now()) / 60000);
         errorMsg.style.display = 'block';
-        errorMsg.innerText = `System Locked. Try again in ${remaining} mins.`;
+        // If lockout is > 24 hours, show permanent message
+        if (lockout.until - Date.now() > 24 * 60 * 60 * 1000) {
+            errorMsg.innerText = "System Locked. Perform Emergency Reset.";
+        } else {
+            const remaining = Math.ceil((lockout.until - Date.now()) / 60000);
+            errorMsg.innerText = `System Locked. Try again in ${remaining} mins.`;
+        }
         return;
     }
 
@@ -391,7 +396,7 @@ function verifyAdminPin() {
             if (attempts >= MAX_ATTEMPTS) {
                 const unlockTime = Date.now() + LOCKOUT_TIME;
                 localStorage.setItem('adminLockout', JSON.stringify({ active: true, until: unlockTime }));
-                errorMsg.innerText = "Too many attempts. System Locked for 15 mins.";
+                errorMsg.innerText = "Too many attempts. System Locked.";
             } else {
                 errorMsg.innerText = `Invalid PIN. ${MAX_ATTEMPTS - attempts} attempts remaining.`;
             }

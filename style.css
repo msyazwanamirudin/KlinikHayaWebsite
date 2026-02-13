@@ -1063,3 +1063,11 @@ footer a.fs-5:hover {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
+
+/* --- Admin Mode Isolation --- */
+body.modal-open #navbar-main,
+body.modal-open .back-to-top,
+body.modal-open .chat-widget-btn,
+body.modal-open #chatWindow {
+    display: none !important;
+}
