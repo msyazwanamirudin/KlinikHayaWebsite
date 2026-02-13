@@ -6,30 +6,25 @@
     /* Teal 800 */
     --secondary: #2dd4bf;
     /* Teal 400 - Fresh & Welcoming */
-    --accent: #f43f5e;
-    /* Rose 500 - Subtle urgency accents */
-    --gold: #d97706;
-    /* Amber 600 - Premium touch */
-
+    /* Teal 700 - Professional, Deep, Trustworthy */
+    --secondary: #ccfbf1;
+    /* Teal 100 - Soft, approachable background */
+    --accent: #d97706;
+    /* Amber 600 - Warmth, critical alerts, attention */
     --dark: #1e293b;
-    /* Slate 800 - Professional Dark */
-    --light: #f1f5f9;
-    /* Slate 100 - Clinical Light */
-    --white: #ffffff;
-    /* Pure White */
+    /* Slate 800 - Modern/Neutral Text */
+    --light: #f8fafc;
+    /* Slate 50 - Very clean, clinical background */
+}
 
-    /* -- UI Variables -- */
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --radius-md: 12px;
-    --radius-lg: 20px;
-    --radius-xl: 30px;
-    --shadow-soft: 0 10px 40px -10px rgba(15, 118, 110, 0.1);
-    /* Teal-tinted shadow */
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+    /* Offset for sticky header */
 }
 
 body {
-    font-family: var(--font-body);
+    font-family: 'Outfit', sans-serif;
     color: var(--dark);
     background-color: #f8fafc;
     /* Slate 50 - Very clean, clinical background */
@@ -168,11 +163,20 @@ h4,
 
 .navbar {
     padding: 1.2rem 0;
-    transition: 0.3s;
+    transition: all 0.3s ease-in-out;
     /* Navbar is sticky-top via Bootstrap, but we need to offset it below status bar */
     top: 37px;
-    /* Be careful with exact height match */
+    z-index: 1030;
+    /* Ensure below Status bar but above content */
 }
+
+.navbar.move-up {
+    top: 0 !important;
+    /* Move to top when status bar is hidden */
+    padding: 1rem 0;
+    /* Optional: Adjust padding when at top */
+}
+
 
 
 .navbar.scrolled {

@@ -616,12 +616,35 @@
     <footer id="mainFooter" class="bg-dark text-white py-5 position-relative">
         <div class="container position-relative z-2">
             <div class="row g-5">
-                <!-- 1. Brand & Contact -->
+                <!-- 1. Brand & Clinic Status -->
                 <div class="col-lg-4">
                     <h3 class="fw-bold mb-4 text-white" style="font-family: 'Space Grotesk'">Klinik</h3>
                     <p class="text-white-50 mb-4">Redefining primary care in Malaysia. Combining medical excellence with
                         technology for a seamless experience.</p>
 
+                    <!-- Clinic Status (Moved here) -->
+                    <h6 class="text-primary mb-4">Clinic Status</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <span id="footerStatusDot"
+                            style="width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px #22c55e;"></span>
+                        <span id="footerStatusText" class="text-white fw-bold">Open Today</span>
+                    </div>
+                    <!-- Doctor on DutySystem -->
+                    <div class="mb-3">
+                        <small class="text-white-50 d-block mb-1">Doctor on Duty:</small>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-md text-primary me-2"></i>
+                            <span id="doctorDutyText" class="text-white">Loading...</span>
+                        </div>
+                    </div>
+                    <ul class="list-unstyled footer-links text-white-50">
+                        <li class="mb-2">9:00 AM - 10:00 PM</li>
+                        <li class="mb-2">Open Daily</li>
+                    </ul>
+                </div>
+
+                <!-- 2. Contact Us (Moved here, Quick Links deleted) -->
+                <div class="col-lg-4">
                     <h6 class="text-primary mb-3">Contact Us</h6>
                     <ul class="list-unstyled text-white-50">
                         <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>Alam Sari, 43000 Bangi, Selangor</li>
@@ -630,44 +653,7 @@
                     </ul>
                 </div>
 
-                <!-- 2. Clinic Status & Quick Links -->
-                <div class="col-lg-4">
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-md-0">
-                            <h6 class="text-primary mb-4">Clinic Status</h6>
-                            <div class="d-flex align-items-center mb-3">
-                                <span id="footerStatusDot"
-                                    style="width: 10px; height: 10px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px #22c55e;"></span>
-                                <span id="footerStatusText" class="text-white fw-bold">Open Today</span>
-                            </div>
-                            <!-- Doctor on DutySystem -->
-                            <div class="mb-3">
-                                <small class="text-white-50 d-block mb-1">Doctor on Duty:</small>
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-user-md text-primary me-2"></i>
-                                    <span id="doctorDutyText" class="text-white">Loading...</span>
-                                </div>
-                            </div>
-                            <ul class="list-unstyled footer-links text-white-50">
-                                <li class="mb-2">9:00 AM - 10:00 PM</li>
-                                <li class="mb-2">Open Daily</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-primary mb-4">Quick Links</h6>
-                            <ul class="list-unstyled footer-links text-white-50">
-                                <li class="mb-2"><a href="#home" class="text-reset text-decoration-none">Home</a></li>
-                                <li class="mb-2"><a href="#services"
-                                        class="text-reset text-decoration-none">Services</a></li>
-                                <li class="mb-2"><a href="#specialist"
-                                        class="text-reset text-decoration-none">Specialists</a></li>
-                                <li class="mb-2"><a href="#faq" class="text-reset text-decoration-none">FAQ</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Map -->
+                <!-- 3. Map (Unchanged) -->
                 <div class="col-lg-4">
                     <h6 class="text-primary mb-4">Our Location</h6>
                     <div class="map-container rounded-3 overflow-hidden shadow-sm">

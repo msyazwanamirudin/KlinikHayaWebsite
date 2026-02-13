@@ -166,14 +166,17 @@ setInterval(updateLiveStatus, 60000);
 document.addEventListener('DOMContentLoaded', () => {
     const footer = document.getElementById('mainFooter');
     const statusBar = document.querySelector('.status-bar');
+    const navbar = document.querySelector('.navbar');
 
     if (footer && statusBar) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     statusBar.classList.add('hidden-bar');
+                    if (navbar) navbar.classList.add('move-up');
                 } else {
                     statusBar.classList.remove('hidden-bar');
+                    if (navbar) navbar.classList.remove('move-up');
                 }
             });
         }, { threshold: 0.1 }); // Trigger when 10% of footer is visible
@@ -560,7 +563,9 @@ function finishBooking() {
     let finalMsg = `Booking Confirmed for *${name}*.<br>📅 ${date} at ${time}<br><br>Please click below to send this to our WhatsApp for final confirmation.`;
     addMessage(finalMsg);
 
-    // Formatted WhatsApp Message (Simplified - No Report)
+    // Formatted WhatsApp Message (Simplified)
+    // Using standard URI component encoding, emojis should work. 
+    // Ensuring clean spacing.
     let waMsg = `*BOOKING REQUEST*\n\n`;
     waMsg += `👤 *Name:* ${name}\n`;
     waMsg += `📅 *Date:* ${date}\n`;
@@ -583,14 +588,12 @@ function finishBooking() {
     btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send to WhatsApp';
     btn.onclick = () => window.open(waUrl, '_blank');
 
-    // Menu Button (Appends Main Menu instead of Reset)
+    // Menu Button (Reset / New Session)
     const menuBtn = document.createElement('div');
     menuBtn.className = 'chip';
     menuBtn.innerText = "Main Menu";
     menuBtn.onclick = () => {
-        addMessage("How else can I help?");
-        chatState.flow = null; // Reset flow but keep history
-        addMainMenu();
+        resetChat(); // Clears screen as requested ("hide past answer")
     };
 
     div.appendChild(btn);
