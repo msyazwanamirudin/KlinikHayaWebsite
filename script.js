@@ -227,7 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Initialize Logic
-    // 3. Initialize Logic
     populateDoctorSelect();
     loadPromo(); // Ensure this runs on load
     updateLiveStatus(); // Initial Roster Check
@@ -325,28 +324,27 @@ function verifyAdminPin() {
 
 function switchAdminTab(tab, event) {
     if (event) event.preventDefault();
-
+    // Only one tab now, but keeping structure if we add more later
     document.querySelectorAll('.admin-tab-pane').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-pills .nav-link').forEach(el => el.classList.remove('active'));
 
-    // Handle Tabs
     if (tab === 'inventory') {
         document.getElementById('tabInventory').style.display = 'block';
         loadInventory();
-    } else if (tab === 'suppliers') {
-        document.getElementById('tabSuppliers').style.display = 'block';
-        loadSuppliers();
+        // Reset filters
+        if (document.getElementById('invSearch')) {
+            document.getElementById('invSearch').value = '';
+            document.getElementById('invFilterCategory').value = 'All';
+        }
     }
 
-    // Toggle Active Class
     if (event && event.currentTarget) {
         event.currentTarget.classList.add('active');
     }
 }
 
-// --- NEW ADMIN TOOLS: INVENTORY & SUPPLIERS ---
+// --- NEW ADMIN TOOLS: INVENTORY MAGAGEMENT ---
 
-// 1. INVENTORY SYSTEM
 function toggleInventoryForm() {
     const form = document.getElementById('inventoryForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
@@ -355,7 +353,18 @@ function toggleInventoryForm() {
 function loadInventory() {
     const list = document.getElementById('inventoryList');
     const empty = document.getElementById('inventoryEmpty');
-    const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
+    let items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
+
+    // 1. Filter Logic
+    const searchTerm = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
+    const filterCat = document.getElementById('invFilterCategory') ? document.getElementById('invFilterCategory').value : 'All';
+
+    // Add original index to allow updates on filtered list
+    items = items.map((item, index) => ({ ...item, originalIndex: index })).filter(item => {
+        const matchName = item.name.toLowerCase().includes(searchTerm);
+        const matchCat = filterCat === 'All' || item.category === filterCat;
+        return matchName && matchCat;
+    });
 
     if (items.length === 0) {
         list.innerHTML = '';
@@ -366,31 +375,62 @@ function loadInventory() {
     empty.style.display = 'none';
     let html = '';
 
-    // Sort by Expiry Date
-    items.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
+    // Sort by Expiry Date (Ascending)
+    items.sort((a, b) => {
+        if (!a.expiry) return 1;
+        if (!b.expiry) return -1;
+        return new Date(a.expiry) - new Date(b.expiry);
+    });
 
-    items.forEach((item, index) => {
+    items.forEach((item) => {
         // Expiry Check
-        const today = new Date();
-        const expDate = new Date(item.expiry);
-        const daysLeft = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-
         let statusClass = '';
-        if (daysLeft < 0) statusClass = 'table-danger'; // Expired
-        else if (daysLeft < 30) statusClass = 'table-warning'; // Expiring soon
+        let statusBadge = '';
+
+        if (item.expiry) {
+            const today = new Date();
+            const expDate = new Date(item.expiry);
+            const daysLeft = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+
+            if (daysLeft < 0) {
+                statusClass = 'table-danger';
+                statusBadge = '<span class="badge bg-danger ms-1">EXPIRED</span>';
+            } else if (daysLeft < 60) {
+                statusClass = 'table-warning';
+                statusBadge = `<span class="badge bg-warning text-dark ms-1">Exp: ${item.expiry}</span>`;
+            }
+        }
+
+        // Category Badge Color
+        const catColors = {
+            'Medicine': 'bg-primary',
+            'Supplements': 'bg-success',
+            'Equipment': 'bg-info text-dark',
+            'Stationery': 'bg-warning text-dark',
+            'Others': 'bg-secondary'
+        };
+        const badgeClass = catColors[item.category] || 'bg-secondary';
 
         html += `
         <tr class="${statusClass}">
             <td>
                 <div class="fw-bold text-dark">${item.name}</div>
-                ${daysLeft < 0 ? '<span class="badge bg-danger" style="font-size:0.6rem">EXPIRED</span>' : ''}
+                <span class="badge ${badgeClass}" style="font-size:0.7rem">${item.category || 'Medicine'}</span>
+                ${statusBadge}
             </td>
-            <td>${item.qty}</td>
             <td>
-                <div class="small">${item.expiry}</div>
+                 <!-- Hidden for mobile space optimization if needed -->
+                 <span class="small text-muted">${item.category || 'Medicine'}</span>
+            </td>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <button onclick="updateStock(${item.originalIndex}, -1)" class="btn btn-outline-danger btn-sm py-0 px-2 fw-bold">-</button>
+                    <span class="fw-bold" style="min-width: 30px; text-align: center;">${item.qty}</span>
+                    <button onclick="updateStock(${item.originalIndex}, 1)" class="btn btn-outline-success btn-sm py-0 px-2 fw-bold">+</button>
+                </div>
             </td>
             <td class="text-end">
-                <button onclick="deleteInventoryItem(${index})" class="btn btn-outline-danger btn-sm border-0 py-0"><i class="fas fa-trash"></i></button>
+                <button onclick="deleteInventoryItem(${item.originalIndex})" class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-trash"></i></button>
             </td>
         </tr>`;
     });
@@ -398,90 +438,60 @@ function loadInventory() {
     list.innerHTML = html;
 }
 
-function addInventoryItem() {
-    const name = document.getElementById('invName').value;
-    const qty = document.getElementById('invQty').value;
-    const expiry = document.getElementById('invExpiry').value;
+function filterInventory() {
+    loadInventory();
+}
 
-    if (!name || !qty || !expiry) return alert("Please fill all fields");
+function updateStock(index, change) {
+    const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
+    if (items[index]) {
+        let newQty = parseInt(items[index].qty) + change;
+        if (newQty < 0) newQty = 0;
+        items[index].qty = newQty;
+        localStorage.setItem('adminInventory', JSON.stringify(items));
+        loadInventory();
+    }
+}
+
+function addInventoryItem() {
+    const name = document.getElementById('invName').value.trim();
+    const qty = parseInt(document.getElementById('invQty').value);
+    const expiry = document.getElementById('invExpiry').value;
+    const category = document.getElementById('invCategory').value;
+
+    if (!name || isNaN(qty)) return alert("Name and Quantity are required");
 
     const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
-    items.push({ name, qty, expiry });
+
+    // Consolidation Logic: Check for same Name + Expiry
+    const existingIndex = items.findIndex(item =>
+        item.name.toLowerCase() === name.toLowerCase() &&
+        item.expiry === expiry
+    );
+
+    if (existingIndex !== -1) {
+        items[existingIndex].qty = parseInt(items[existingIndex].qty) + qty;
+        alert(`Updated stock for ${items[existingIndex].name}. New Qty: ${items[existingIndex].qty}`);
+    } else {
+        items.push({ name, qty, expiry, category });
+    }
+
     localStorage.setItem('adminInventory', JSON.stringify(items));
 
     // Reset Form
     document.getElementById('invName').value = '';
     document.getElementById('invQty').value = '';
-    document.getElementById('invExpiry').value = '';
     toggleInventoryForm();
     loadInventory();
 }
 
 function deleteInventoryItem(index) {
-    if (!confirm("Remove this item?")) return;
+    if (!confirm("Remove this item permanently?")) return;
     const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
     items.splice(index, 1);
     localStorage.setItem('adminInventory', JSON.stringify(items));
     loadInventory();
 }
-
-// 2. SUPPLIER DIRECTORY
-function toggleSupplierForm() {
-    const form = document.getElementById('supplierForm');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-function loadSuppliers() {
-    const list = document.getElementById('supplierList');
-    const empty = document.getElementById('supplierEmpty');
-    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
-
-    if (suppliers.length === 0) {
-        list.innerHTML = '';
-        empty.style.display = 'block';
-        return;
-    }
-
-    empty.style.display = 'none';
-    list.innerHTML = suppliers.map((sup, index) => `
-        <div class="bg-white p-3 border rounded d-flex justify-content-between align-items-center">
-            <div>
-                <div class="fw-bold text-dark">${sup.name}</div>
-                <div class="small text-muted"><i class="fas fa-phone-alt me-1"></i> ${sup.phone}</div>
-                <div class="badge bg-light text-dark border mt-1">${sup.category}</div>
-            </div>
-            <button onclick="deleteSupplier(${index})" class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-trash"></i></button>
-        </div>
-    `).join('');
-}
-
-function addSupplier() {
-    const name = document.getElementById('supName').value;
-    const phone = document.getElementById('supPhone').value;
-    const category = document.getElementById('supCategory').value;
-
-    if (!name || !phone) return alert("Name and Phone are required");
-
-    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
-    suppliers.push({ name, phone, category });
-    localStorage.setItem('adminSuppliers', JSON.stringify(suppliers));
-
-    // Reset
-    document.getElementById('supName').value = '';
-    document.getElementById('supPhone').value = '';
-    document.getElementById('supCategory').value = '';
-    toggleSupplierForm();
-    loadSuppliers();
-}
-
-function deleteSupplier(index) {
-    if (!confirm("Remove this supplier?")) return;
-    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
-    suppliers.splice(index, 1);
-    localStorage.setItem('adminSuppliers', JSON.stringify(suppliers));
-    loadSuppliers();
-}
-
 
 // --- PUBLIC ROSTER VIEW (PATIENT MODAL) ---
 function openRosterModal() {
@@ -1038,113 +1048,25 @@ function handleBookingStep(choice) {
 // This function is assumed to be `handleUserChoice` or similar,
 // which processes user input and then calls `processChatFlow`.
 // The instruction implies this structure for randomizing typing delay.
-function handleUserChoice(choice) {
-    const qr = document.getElementById('quickReplies');
-    if (qr) qr.remove();
+// REDUNDANT? handleUserChoice is defined above. But Step 1154 showed it again?
+// Step 1154 showed lines 999-1021 as handleUserChoice REPEAT?
+// NO, Step 1154 showed lines 601-1175.
+// Lines 748 and 999 are BOTH handleUserChoice?
+// Let's check Step 1154 output.
+// Line 748: function handleUserChoice(choice) { ... }
+// Line 999: function handleUserChoice(choice) { ... }
+// Ah, the file must have duplicates from previous edits!
+// I should clean this up. I will use the one at line 748 and ignore the duplicate at 999.
+// And 1023: function processChatFlow(choice) { ... } (Duplicate of 772).
 
-    if (choice === 'Start Over' || choice === 'Back to Start') { resetChat(); return; }
-    if (choice === 'Back') {
-        addMessage("Back", true); // Log 'Back' action
-        goBack();
-        return;
-    }
+// I will filter out duplicates in my rewrite.
+// I will cut off the file after `finishBooking` (Line 1152) and `addQuickReplies` (Line 1154).
+// Wait, `addQuickReplies` is at 1154.
+// `finishBooking` is at 1106.
 
-    addMessage(choice, true); // Display user's choice
-    toggleInput(false); // Disable input while processing
-    showTyping(); // Show typing indicator
+// I will keep the cleaner versions.
+// I will remove the duplicates at the end.
 
-    // Randomize Think Time (0.5s - 1.0s)
-    const delay = Math.floor(Math.random() * 500) + 500;
-
-    setTimeout(() => {
-        removeTyping();
-        processChatFlow(choice); // Process the choice after delay
-    }, delay);
-}
-
-function processChatFlow(choice) {
-    // 0. Global Intercepts
-    if (choice === 'Yes, Book Now') {
-        chatState.bookingData = {}; // Clear previous data
-        chatState.bookingData.service = chatState.bookingData.service || 'General Booking';
-        startBookingFlow();
-        return;
-    } else if (choice === 'Back to Start') {
-        resetChat();
-        return;
-    } else if (choice === 'Back') {
-        goBack();
-        return;
-    }
-
-    // If input is from text field, handle it
-    if (chatState.flow === 'booking' && chatState.step === 0 && chatState.bookingData.name === undefined) {
-        handleBookingStep(choice);
-        return;
-    }
-    if (chatState.flow === 'booking' && chatState.step === 1 && chatState.bookingData.date === undefined) {
-        handleBookingStep(choice);
-        return;
-    }
-    if (chatState.flow === 'booking' && chatState.step === 2 && chatState.bookingData.time === undefined) {
-        handleBookingStep(choice);
-        return;
-    }
-
-    // 1. Main Menu Selection
-    if (chatState.flow === null) {
-        if (choice === 'Check Symptoms') {
-            chatState.answers = []; // Reset answers
-            saveState();
-            addMessage("I can help assess your condition. What seems to be the main issue?");
-            addQuickReplies(['High Fever (Dengue?)', 'General Fever/Flu', 'Other / Pain', 'Back']);
-        } else if (choice === 'High Fever (Dengue?)') {
-            startFlow('dengue');
-        } else if (choice === 'General Fever/Flu') {
-            startFlow('fever');
-        } else if (choice === 'Other / Pain') {
-            startFlow('general');
-        } else if (choice === 'Book Appointment') {
-            chatState.bookingData = {}; // Clear previous data
-            chatState.bookingData.service = 'General Booking';
-            startBookingFlow();
-        } else if (choice === 'Fertility Info') {
-            saveState();
-            addMessage("Dr. Alia is our fertility expert. Connect with us for a Follicle Scan (RM60).");
-            addQuickReplies(['Book Scan', 'Chat with Specialist', 'Back']);
-        } else if (choice === 'Book Scan') {
-            chatState.bookingData = {}; // Clear previous data
-            chatState.bookingData.service = 'Follicle Scan';
-            startBookingFlow();
-        } else if (choice === 'Chat with Specialist') {
-            // FIX: Chat with Specialist Flow
-            addMessage("Connecting you to our Fertility Specialist on WhatsApp...");
-            setTimeout(() => {
-                bookViaWhatsApp('Fertility Specialist Chat', 'I have questions about fertility treatments.');
-                addMainMenu(); // Return to menu after action
-            }, 1000);
-        } else {
-            // Default Fallback
-            addMessage("I didn't quite catch that. Here are some options:");
-            addMainMenu();
-        }
-        return;
-    }
-
-    // 2. Booking Flow
-    if (chatState.flow === 'booking') {
-        handleBookingStep(choice);
-        return;
-    }
-
-    // 3. Symptom Checker
-    saveState();
-    chatState.answers.push(choice);
-    chatState.step++;
-    nextQuestion();
-}
-
-// 2. Updated WhatsApp Format
 function finishBooking() {
     const { name, date, time, service } = chatState.bookingData;
 
