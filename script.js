@@ -12,6 +12,8 @@ window.addEventListener('scroll', function () {
 
     // ScrollSpy Logic
     let current = '';
+
+    // Standard Spy
     sections.forEach(section => {
         const sectionTop = section.offsetTop;
         const sectionHeight = section.clientHeight;
@@ -21,9 +23,17 @@ window.addEventListener('scroll', function () {
         }
     });
 
+    // FORCE CONTACT ACTIVE AT BOTTOM OF PAGE
+    // (Fixes issue where footer is too short to trigger standard spy)
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+        current = 'mainFooter';
+    }
+
     navLinks.forEach(link => {
         link.classList.remove('active-nav');
-        if (link.getAttribute('href') && link.getAttribute('href').includes(current)) {
+        // Robust null check for href
+        const href = link.getAttribute('href');
+        if (href && href.includes(current) && current !== '') {
             link.classList.add('active-nav');
         }
     });
@@ -174,16 +184,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Promo Image Live Preview
+    // Promo Image Live Preview & Error Handling
     const promoBgInput = document.getElementById('promoImgInput');
-    if (promoBgInput) {
+    const preview = document.getElementById('promoImgPreview');
+
+    if (promoBgInput && preview) {
+        // Handle Input Change
         promoBgInput.addEventListener('input', function () {
-            const preview = document.getElementById('promoImgPreview');
             if (this.value) {
                 preview.src = this.value;
                 preview.style.display = 'block';
             } else {
                 preview.style.display = 'none';
+            }
+        });
+
+        // Handle Image Load Error (e.g. 403 Forbidden, 404 Not Found)
+        preview.addEventListener('error', function () {
+            if (this.src && this.src !== window.location.href) { // Avoid triggering on empty
+                alert("Cannot load this image. The website hosting it might be blocking access (Hotlinking protection) or the URL is invalid.\n\nTry a direct link from Unsplash or upload the image to a hosting site like Imgur.");
+                this.style.display = 'none'; // Hide broken image icon
             }
         });
     }
@@ -892,30 +912,130 @@ function handleBookingStep(choice) {
     }
 }
 
+// This function is assumed to be `handleUserChoice` or similar,
+// which processes user input and then calls `processChatFlow`.
+// The instruction implies this structure for randomizing typing delay.
+function handleUserChoice(choice) {
+    addMessage(choice, true); // Display user's choice
+    toggleInput(false); // Disable input while processing
+    showTyping(); // Show typing indicator
+
+    // Randomize Think Time (0.5s - 1.0s)
+    const delay = Math.floor(Math.random() * 500) + 500;
+
+    setTimeout(() => {
+        removeTyping();
+        processChatFlow(choice); // Process the choice after delay
+    }, delay);
+}
+
+function processChatFlow(choice) {
+    // 0. Global Intercepts
+    if (choice === 'Yes, Book Now') {
+        chatState.bookingData = {}; // Clear previous data
+        chatState.bookingData.service = chatState.bookingData.service || 'General Booking';
+        startBookingFlow();
+        return;
+    } else if (choice === 'Back to Start') {
+        resetChat();
+        return;
+    } else if (choice === 'Back') {
+        goBack();
+        return;
+    }
+
+    // If input is from text field, handle it
+    if (chatState.flow === 'booking' && chatState.step === 0 && chatState.bookingData.name === undefined) {
+        handleBookingStep(choice);
+        return;
+    }
+    if (chatState.flow === 'booking' && chatState.step === 1 && chatState.bookingData.date === undefined) {
+        handleBookingStep(choice);
+        return;
+    }
+    if (chatState.flow === 'booking' && chatState.step === 2 && chatState.bookingData.time === undefined) {
+        handleBookingStep(choice);
+        return;
+    }
+
+    // 1. Main Menu Selection
+    if (chatState.flow === null) {
+        if (choice === 'Check Symptoms') {
+            chatState.answers = []; // Reset answers
+            saveState();
+            addMessage("I can help assess your condition. What seems to be the main issue?");
+            addQuickReplies(['High Fever (Dengue?)', 'General Fever/Flu', 'Other / Pain', 'Back']);
+        } else if (choice === 'High Fever (Dengue?)') {
+            startFlow('dengue');
+        } else if (choice === 'General Fever/Flu') {
+            startFlow('fever');
+        } else if (choice === 'Other / Pain') {
+            startFlow('general');
+        } else if (choice === 'Book Appointment') {
+            chatState.bookingData = {}; // Clear previous data
+            chatState.bookingData.service = 'General Booking';
+            startBookingFlow();
+        } else if (choice === 'Fertility Info') {
+            saveState();
+            addMessage("Dr. Alia is our fertility expert. Connect with us for a Follicle Scan (RM60).");
+            addQuickReplies(['Book Scan', 'Chat with Specialist', 'Back']);
+        } else if (choice === 'Book Scan') {
+            chatState.bookingData = {}; // Clear previous data
+            chatState.bookingData.service = 'Follicle Scan';
+            startBookingFlow();
+        } else if (choice === 'Chat with Specialist') {
+            // FIX: Chat with Specialist Flow
+            addMessage("Connecting you to our Fertility Specialist on WhatsApp...");
+            setTimeout(() => {
+                bookViaWhatsApp('Fertility Specialist Chat', 'I have questions about fertility treatments.');
+                addMainMenu(); // Return to menu after action
+            }, 1000);
+        } else {
+            // Default Fallback
+            addMessage("I didn't quite catch that. Here are some options:");
+            addMainMenu();
+        }
+        return;
+    }
+
+    // 2. Booking Flow
+    if (chatState.flow === 'booking') {
+        handleBookingStep(choice);
+        return;
+    }
+
+    // 3. Symptom Checker
+    saveState();
+    chatState.answers.push(choice);
+    chatState.step++;
+    nextQuestion();
+}
+
 // 2. Updated WhatsApp Format
 function finishBooking() {
     const { name, date, time, service } = chatState.bookingData;
 
-    showTyping(() => {
+    showTyping();
+
+    // Randomize Think Time (0.5s - 1.0s)
+    const delay = Math.floor(Math.random() * 500) + 500;
+
+    setTimeout(() => {
+        removeTyping();
+
+        // Final Message Construction
         let finalMsg = `Booking Confirmed for *${name}*.<br>📅 ${date} at ${time}<br><br>Please click below to send this to our WhatsApp for final confirmation.`;
 
-        // Manual construction to avoid using addMessage recursively with typing
         const chatBody = document.getElementById('chatBody');
         const div = document.createElement('div');
-        div.className = 'bot-message slide-in';
+        div.className = 'msg msg-bot'; // Use standard class
         div.innerHTML = finalMsg;
         chatBody.appendChild(div);
-        scrollToBottom();
+        chatBody.scrollTop = chatBody.scrollHeight;
 
         // New Requested Format
         let waMsg = `👤 Name: ${name}\n`;
         waMsg += `📅 Date: ${date}\n`;
-        waMsg += `🕒 Time: ${time}\n`;
-        waMsg += `🏥Service: ${service || 'General'}`;
-
-        const waUrl = `https://wa.me/60172032048?text=${encodeURIComponent(waMsg)}`;
-
-        const linkDiv = document.createElement('div');
         linkDiv.className = 'text-center mt-3 slide-in';
         linkDiv.innerHTML = `<a href="${waUrl}" target="_blank" class="btn btn-success rounded-pill px-4"><i class="fab fa-whatsapp me-2"></i>Send to Clinic</a>`;
         chatBody.appendChild(linkDiv);
