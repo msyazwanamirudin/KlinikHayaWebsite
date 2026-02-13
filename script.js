@@ -129,19 +129,27 @@ function updateLiveStatus() {
     updateDoctorRoster(isOpen);
 }
 
-// --- ADMIN ROSTER CONTROL (Secret Panel) ---
+// --- ADVANCED ADMIN SYSTEM (LocalStorage CMS) ---
 let clickCount = 0;
 let clickTimer = null;
-const ADMIN_PIN = "8888"; // Simple Verification PIN
+const ADMIN_PIN = "8888";
+
+// Data: Registered Doctors
+const DOCTORS = [
+    "Dr. Alia Syamim (Fertility)",
+    "Dr. Sarah Lee (Pediatric)",
+    "Dr. Hanim (General)",
+    "Dr. Wong (Locum)",
+    "Dr. Amin (Specialist)"
+];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Admin Trigger
     const trigger = document.getElementById('adminTrigger');
     if (trigger) {
         trigger.addEventListener('click', () => {
             clickCount++;
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 2000); // Reset after 2s
-            }
+            if (clickCount === 1) clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
             if (clickCount >= 5) {
                 openAdminModal();
                 clickCount = 0;
@@ -149,106 +157,212 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // 2. Initialize Logic
+    populateDoctorSelect();
+    renderRosterRules();
+    loadPromo();
+    updateLiveStatus(); // Initial Roster Check
 });
 
+// --- UI MANAGERS ---
 function openAdminModal() {
-    const modal = document.getElementById('adminModal');
-    const pinScreen = document.getElementById('adminPinScreen');
-    const controlScreen = document.getElementById('adminControlScreen');
-    const pinInput = document.getElementById('adminPinInput');
-
-    if (modal) {
-        modal.style.display = 'flex';
-        // Reset state
-        pinScreen.style.display = 'block';
-        controlScreen.style.display = 'none';
-        pinInput.value = '';
-        document.getElementById('pinError').style.display = 'none';
-        pinInput.focus();
-    }
+    document.getElementById('adminModal').style.display = 'flex';
+    document.getElementById('adminPinScreen').style.display = 'block';
+    document.getElementById('adminControlScreen').style.display = 'none';
+    document.getElementById('adminPinInput').value = '';
+    document.getElementById('adminPinInput').focus();
 }
 
 function closeAdminModal() {
-    const modal = document.getElementById('adminModal');
-    if (modal) modal.style.display = 'none';
+    document.getElementById('adminModal').style.display = 'none';
 }
 
 function verifyAdminPin() {
-    const input = document.getElementById('adminPinInput').value;
-    if (input === ADMIN_PIN) {
+    if (document.getElementById('adminPinInput').value === ADMIN_PIN) {
         document.getElementById('adminPinScreen').style.display = 'none';
         document.getElementById('adminControlScreen').style.display = 'block';
-
-        // Load current override if any
-        const current = localStorage.getItem('doctorOverride');
-        if (current) document.getElementById('manualDoctorName').value = current;
+        loadPromoForm(); // Pre-fill form
+        renderRosterRules(); // Refresh list
     } else {
         document.getElementById('pinError').style.display = 'block';
     }
 }
 
-function saveDoctorOverride() {
-    const name = document.getElementById('manualDoctorName').value.trim();
-    if (name) {
-        localStorage.setItem('doctorOverride', name);
-        alert(`Success! Doctor on duty set to: ${name}`);
-        updateLiveStatus(); // Refresh immediately
-        closeAdminModal();
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.nav-pills .nav-link').forEach(el => el.classList.remove('active'));
+
+    if (tab === 'roster') {
+        document.getElementById('tabRoster').style.display = 'block';
+        event.target.classList.add('active'); // Simplistic active toggle
+    } else {
+        document.getElementById('tabPromo').style.display = 'block';
+        event.target.classList.add('active');
     }
 }
 
-function clearDoctorOverride() {
-    localStorage.removeItem('doctorOverride');
-    alert("Reset! Roster is now back to automatic schedule.");
-    updateLiveStatus();
-    closeAdminModal();
+function toggleRuleInputs() {
+    const type = document.getElementById('rosterRuleType').value;
+    if (type === 'weekly') {
+        document.getElementById('inputWeekly').style.display = 'block';
+        document.getElementById('inputDate').style.display = 'none';
+    } else {
+        document.getElementById('inputWeekly').style.display = 'none';
+        document.getElementById('inputDate').style.display = 'block';
+    }
 }
 
+// --- ROSTER ENGINE ---
+function populateDoctorSelect() {
+    const sel = document.getElementById('rosterDoctorSelect');
+    if (!sel) return;
+    sel.innerHTML = DOCTORS.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+
+function getRosterRules() {
+    return JSON.parse(localStorage.getItem('rosterRules') || '[]');
+}
+
+function addRosterRule() {
+    const doc = document.getElementById('rosterDoctorSelect').value;
+    const type = document.getElementById('rosterRuleType').value;
+    let rule = { id: Date.now(), doc, type };
+
+    if (type === 'weekly') {
+        rule.day = parseInt(document.getElementById('rosterDaySelect').value);
+        rule.dayName = document.getElementById('rosterDaySelect').options[document.getElementById('rosterDaySelect').selectedIndex].text;
+    } else {
+        const dateVal = document.getElementById('rosterDateInput').value;
+        if (!dateVal) return alert("Please select a date");
+        rule.date = dateVal;
+    }
+
+    const rules = getRosterRules();
+    rules.push(rule);
+    localStorage.setItem('rosterRules', JSON.stringify(rules));
+
+    renderRosterRules();
+    updateLiveStatus(); // Apply immediately
+    alert("Rule Added!");
+}
+
+function deleteRule(id) {
+    const rules = getRosterRules().filter(r => r.id !== id);
+    localStorage.setItem('rosterRules', JSON.stringify(rules));
+    renderRosterRules();
+    updateLiveStatus();
+}
+
+function resetRosterRules() {
+    if (confirm("Clear all custom roster rules?")) {
+        localStorage.removeItem('rosterRules');
+        renderRosterRules();
+        updateLiveStatus();
+    }
+}
+
+function renderRosterRules() {
+    const list = document.getElementById('rosterRulesList');
+    const rules = getRosterRules();
+    if (rules.length === 0) {
+        list.innerHTML = '<li class="list-group-item text-muted small">No custom rules. Using default schedule.</li>';
+        return;
+    }
+
+    list.innerHTML = rules.map(r => `
+        <li class="list-group-item">
+            <div>
+                <span class="badge bg-secondary me-2">${r.type === 'weekly' ? 'Rep' : 'Date'}</span>
+                <strong>${r.doc}</strong>
+                <br>
+                <small class="text-muted">${r.type === 'weekly' ? 'Every ' + r.dayName : r.date}</small>
+            </div>
+            <button onclick="deleteRule(${r.id})" class="btn btn-sm text-danger"><i class="fas fa-trash"></i></button>
+        </li>
+    `).join('');
+}
 
 function updateDoctorRoster(isOpen) {
-    const docText = document.getElementById('doctorDutyText'); // Footer
-    const topDocText = document.getElementById('topDoctorDuty'); // Top Bar
-
-    // 1. Check for Manual Override (Admin)
-    const override = localStorage.getItem('doctorOverride');
-
-    if (override) {
-        const htmlContent = `<span class="fw-bold text-warning">${override} <i class="fas fa-lock small ms-1" title="Manual Override"></i></span>`;
-        if (docText) docText.innerHTML = htmlContent;
-        if (topDocText) topDocText.innerHTML = override;
-        return; // Skip auto logic if override is present
-    }
+    const docText = document.getElementById('doctorDutyText');
+    const topDocText = document.getElementById('topDoctorDuty');
 
     if (!isOpen) {
-        const closedText = "<span class='text-muted'>-</span>";
-        if (docText) docText.innerHTML = closedText;
+        if (docText) docText.innerHTML = "<span class='text-muted'>-</span>";
         if (topDocText) topDocText.innerHTML = "-";
         return;
     }
 
     const now = new Date();
-    const day = now.getDay(); // 0 = Sun, 1 = Mon ...
+    const todayDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const day = now.getDay(); // 0-6
 
-    // Fake Live Roster
-    // Mon, Wed, Fri: Dr. Sarah
-    // Tue, Thu, Sat: Dr. Amin
-    // Sun: Dr. Wong (Locum)
+    // PRIORITY 1: Specific Date Rule
+    const rules = getRosterRules();
+    const dateRule = rules.find(r => r.type === 'date' && r.date === todayDate);
 
-    let doctorName = "Dr. Sarah (General)"; // Default
+    // PRIORITY 2: Weekly Rule
+    const weekRule = rules.find(r => r.type === 'weekly' && r.day === day);
 
-    if (day === 0) {
-        doctorName = "Dr. Wong (Locum)";
-    } else if (day === 2 || day === 4 || day === 6) {
-        doctorName = "Dr. Amin (Specialist)";
+    let doctorName = "";
+
+    if (dateRule) {
+        doctorName = dateRule.doc + ' <i class="fas fa-star text-warning small" title="Special Date"></i>';
+    } else if (weekRule) {
+        doctorName = weekRule.doc;
+    } else {
+        // PRIORITY 3: Default Hardcoded Logic
+        if (day === 0) doctorName = "Dr. Wong (Locum)";
+        else if (day === 2 || day === 4 || day === 6) doctorName = "Dr. Amin (Specialist)";
+        else doctorName = "Dr. Sara (General)";
     }
 
-    const htmlContent = `<span class="fw-bold">${doctorName}</span>`;
+    if (docText) docText.innerHTML = `<span class="fw-bold">${doctorName}</span>`;
+    if (topDocText) topDocText.innerHTML = doctorName.replace(/<[^>]*>?/gm, ''); // Strip HTML for top bar
+}
 
-    // Update Footer
-    if (docText) docText.innerHTML = htmlContent;
 
-    // Update Top Bar
-    if (topDocText) topDocText.innerHTML = doctorName;
+// --- PROMO ENGINE ---
+function savePromo(e) {
+    e.preventDefault();
+    const promoData = {
+        active: document.getElementById('promoActive').checked,
+        title: document.getElementById('promoTitleInput').value,
+        desc: document.getElementById('promoDescInput').value,
+        img: document.getElementById('promoImgInput').value
+    };
+    localStorage.setItem('promoData', JSON.stringify(promoData));
+    loadPromo();
+    alert("Promo Updated!");
+}
+
+function loadPromoForm() {
+    const data = JSON.parse(localStorage.getItem('promoData') || '{}');
+    document.getElementById('promoActive').checked = data.active || false;
+    document.getElementById('promoTitleInput').value = data.title || '';
+    document.getElementById('promoDescInput').value = data.desc || '';
+    document.getElementById('promoImgInput').value = data.img || '';
+}
+
+function loadPromo() {
+    const data = JSON.parse(localStorage.getItem('promoData') || '{}');
+    const section = document.getElementById('promoSection');
+
+    if (data.active) {
+        section.classList.remove('d-none');
+        document.getElementById('promoTitle').innerText = data.title || "Special Offer";
+        document.getElementById('promoText').innerText = data.desc || "";
+
+        const img = document.getElementById('promoImage');
+        if (data.img) {
+            img.src = data.img;
+            document.getElementById('promoImgCol').style.display = 'block';
+        } else {
+            document.getElementById('promoImgCol').style.display = 'none';
+        }
+    } else {
+        if (section) section.classList.add('d-none');
+    }
 }
 
 updateLiveStatus();
@@ -259,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const footer = document.getElementById('mainFooter');
     const statusBar = document.querySelector('.status-bar');
     const navbar = document.querySelector('.navbar');
+    const contactLink = document.querySelector('a[href="#mainFooter"]'); // Select Contact Link
 
     if (footer && statusBar) {
         const observer = new IntersectionObserver((entries) => {
@@ -266,9 +381,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (entry.isIntersecting) {
                     statusBar.classList.add('hidden-bar');
                     if (navbar) navbar.classList.add('move-up');
+
+                    // Manually Activate Contact Link
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    if (contactLink) {
+                        contactLink.classList.add('active');
+                        contactLink.classList.add('active-nav'); // Just to be safe with styles
+                    }
+
                 } else {
                     statusBar.classList.remove('hidden-bar');
                     if (navbar) navbar.classList.remove('move-up');
+
+                    // Remove Manual Active (Bootstrap Spy takes over for others)
+                    if (contactLink) {
+                        contactLink.classList.remove('active');
+                        contactLink.classList.remove('active-nav');
+                    }
                 }
             });
         }, { threshold: 0.1 }); // Trigger when 10% of footer is visible
