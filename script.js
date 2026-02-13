@@ -130,13 +130,8 @@ function updateLiveStatus() {
 }
 
 function updateDoctorRoster(isOpen) {
-    const docText = document.getElementById('doctorDutyText');
-    if (!docText) return;
-
-    if (!isOpen) {
-        docText.innerHTML = "<span class='text-muted'>-</span>";
-        return;
-    }
+    const docText = document.getElementById('doctorDutyText'); // Footer
+    const topDocText = document.getElementById('topDoctorDuty'); // Top Bar
 
     const now = new Date();
     const day = now.getDay(); // 0 = Sun, 1 = Mon ...
@@ -154,11 +149,38 @@ function updateDoctorRoster(isOpen) {
         doctorName = "Dr. Amin (Specialist)";
     }
 
-    docText.innerHTML = `<span class="fw-bold">${doctorName}</span>`;
+    const htmlContent = `<span class="fw-bold">${doctorName}</span>`;
+    const closedContent = "<span class='text-muted'>-</span>";
+
+    // Update Footer
+    if (docText) docText.innerHTML = isOpen ? htmlContent : closedContent;
+
+    // Update Top Bar
+    if (topDocText) topDocText.innerHTML = isOpen ? doctorName : "-";
 }
 
 updateLiveStatus();
 setInterval(updateLiveStatus, 60000);
+
+// --- HIDE STATUS BAR ON FOOTER SCROLL ---
+document.addEventListener('DOMContentLoaded', () => {
+    const footer = document.getElementById('mainFooter');
+    const statusBar = document.querySelector('.status-bar');
+
+    if (footer && statusBar) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    statusBar.classList.add('hidden-bar');
+                } else {
+                    statusBar.classList.remove('hidden-bar');
+                }
+            });
+        }, { threshold: 0.1 }); // Trigger when 10% of footer is visible
+
+        observer.observe(footer);
+    }
+});
 
 
 // --- WHATSAPP BOOKING LOGIC (With Confirmation) ---
