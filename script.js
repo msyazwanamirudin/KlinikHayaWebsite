@@ -147,7 +147,7 @@ let clickTimer = null;
 
 // Security Constants
 // SHA-256 for "8888"
-const ADMIN_HASH_SHA = "2926a2731804f57c59de960787a419eb50684f478a576dbf1dd90c291244e8af";
+const ADMIN_HASH_SHA = "2926a2731f4b312c08982cacf8061eb14bf65c1a87cc5d70e864e079c6220731";
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME = 15 * 60 * 1000;
 
