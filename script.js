@@ -123,9 +123,40 @@ function updateLiveStatus() {
     if (footerDot) {
         footerDot.style.backgroundColor = color;
         footerDot.style.boxShadow = shadow;
-        // Optional: Add animation to footer dot too if desired
+        footerDot.style.animation = anim; // SYNC GLOWING ANIMATION
     }
+
+    updateDoctorRoster(isOpen);
 }
+
+function updateDoctorRoster(isOpen) {
+    const docText = document.getElementById('doctorDutyText');
+    if (!docText) return;
+
+    if (!isOpen) {
+        docText.innerHTML = "<span class='text-muted'>-</span>";
+        return;
+    }
+
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sun, 1 = Mon ...
+
+    // Fake Live Roster
+    // Mon, Wed, Fri: Dr. Sarah
+    // Tue, Thu, Sat: Dr. Amin
+    // Sun: Dr. Wong (Locum)
+
+    let doctorName = "Dr. Sarah (General)"; // Default
+
+    if (day === 0) {
+        doctorName = "Dr. Wong (Locum)";
+    } else if (day === 2 || day === 4 || day === 6) {
+        doctorName = "Dr. Amin (Specialist)";
+    }
+
+    docText.innerHTML = `<span class="fw-bold">${doctorName}</span>`;
+}
+
 updateLiveStatus();
 setInterval(updateLiveStatus, 60000);
 
