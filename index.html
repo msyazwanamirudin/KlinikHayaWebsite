@@ -735,43 +735,109 @@
                                     <ul class="nav nav-pills mb-3 nav-justified" id="adminTabs">
                                         <li class="nav-item">
                                             <button class="nav-link active btn-sm"
-                                                onclick="switchAdminTab('reception', event)">🖥️ Front Desk</button>
+                                                onclick="switchAdminTab('inventory', event)">📦 Inventory</button>
+                                        </li>
+                                        <li class="nav-item">
+                                            <button class="nav-link btn-sm"
+                                                onclick="switchAdminTab('suppliers', event)">🚚 Suppliers</button>
                                         </li>
                                     </ul>
 
-                                    <!-- Tab: Reception Tools -->
-                                    <div id="tabReception" class="admin-tab-pane">
-                                        <h6 class="text-primary fw-bold mb-3 small text-uppercase">Reception Utilities
-                                        </h6>
-
-                                        <!-- Bill Generator -->
-                                        <div class="bg-light p-3 rounded mb-3 border">
-                                            <h6 class="fw-bold mb-2"><i class="fab fa-whatsapp text-success me-1"></i>
-                                                Bill Generator</h6>
-                                            <input type="text" id="billService"
-                                                class="form-control form-control-sm mb-2"
-                                                placeholder="Service Name (e.g. Consultation)">
-                                            <input type="number" id="billPrice"
-                                                class="form-control form-control-sm mb-2" placeholder="Price (RM)">
-                                            <textarea id="billNotes" class="form-control form-control-sm mb-2" rows="2"
-                                                placeholder="Additional Notes (Optional)"></textarea>
-                                            <button onclick="generateBill()" class="btn btn-success btn-sm w-100"><i
-                                                    class="fas fa-copy me-1"></i> Copy WhatsApp Invoice</button>
+                                    <!-- Tab: Inventory Management -->
+                                    <div id="tabInventory" class="admin-tab-pane">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="text-primary fw-bold small text-uppercase mb-0">Medicine Stock
+                                            </h6>
+                                            <button onclick="toggleInventoryForm()"
+                                                class="btn btn-primary btn-sm rounded-pill"><i
+                                                    class="fas fa-plus me-1"></i> Add Item</button>
                                         </div>
 
-                                        <!-- Local Queue Counter -->
-                                        <div class="bg-white p-3 rounded border text-center">
-                                            <h6 class="fw-bold mb-2">Queue Counter</h6>
-                                            <div class="d-flex justify-content-center align-items-center gap-3">
-                                                <button
-                                                    onclick="this.nextElementSibling.innerText = Math.max(0, parseInt(this.nextElementSibling.innerText) - 1)"
-                                                    class="btn btn-outline-danger btn-sm">-</button>
-                                                <span class="h3 mb-0 fw-bold">0</span>
-                                                <button
-                                                    onclick="this.previousElementSibling.innerText = parseInt(this.previousElementSibling.innerText) + 1"
-                                                    class="btn btn-outline-success btn-sm">+</button>
+                                        <!-- Add Item Form (Hidden) -->
+                                        <div id="inventoryForm" class="bg-light p-3 rounded mb-3 border"
+                                            style="display: none;">
+                                            <h6 class="fw-bold mb-2">New Item</h6>
+                                            <input type="text" id="invName" class="form-control form-control-sm mb-2"
+                                                placeholder="Item Name (e.g. Paracetamol)">
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-6">
+                                                    <input type="number" id="invQty"
+                                                        class="form-control form-control-sm" placeholder="Qty">
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="date" id="invExpiry"
+                                                        class="form-control form-control-sm">
+                                                    <small class="text-muted" style="font-size: 0.7rem;">Expiry
+                                                        Date</small>
+                                                </div>
                                             </div>
-                                            <small class="text-muted d-block mt-1">Reset daily</small>
+                                            <div class="d-flex gap-2">
+                                                <button onclick="addInventoryItem()"
+                                                    class="btn btn-success btn-sm flex-grow-1">Save</button>
+                                                <button onclick="toggleInventoryForm()"
+                                                    class="btn btn-outline-secondary btn-sm">Cancel</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Inventory List -->
+                                        <div class="table-responsive border rounded" style="max-height: 300px;">
+                                            <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>Item</th>
+                                                        <th>Qty</th>
+                                                        <th>Exp</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="inventoryList">
+                                                    <!-- Populated by JS -->
+                                                </tbody>
+                                            </table>
+                                            <div id="inventoryEmpty" class="text-center p-3 text-muted small"
+                                                style="display: none;">
+                                                No items found. Add one above.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab: Supplier Directory -->
+                                    <div id="tabSuppliers" class="admin-tab-pane" style="display: none;">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="text-primary fw-bold small text-uppercase mb-0">Supplier List
+                                            </h6>
+                                            <button onclick="toggleSupplierForm()"
+                                                class="btn btn-primary btn-sm rounded-pill"><i
+                                                    class="fas fa-plus me-1"></i> Add Supplier</button>
+                                        </div>
+
+                                        <!-- Add Supplier Form (Hidden) -->
+                                        <div id="supplierForm" class="bg-light p-3 rounded mb-3 border"
+                                            style="display: none;">
+                                            <h6 class="fw-bold mb-2">New Supplier</h6>
+                                            <input type="text" id="supName" class="form-control form-control-sm mb-2"
+                                                placeholder="Company Name">
+                                            <input type="text" id="supPhone" class="form-control form-control-sm mb-2"
+                                                placeholder="Phone / Contact">
+                                            <input type="text" id="supCategory"
+                                                class="form-control form-control-sm mb-2"
+                                                placeholder="Category (e.g. Pharmacy, Oxygen)">
+                                            <div class="d-flex gap-2">
+                                                <button onclick="addSupplier()"
+                                                    class="btn btn-success btn-sm flex-grow-1">Save</button>
+                                                <button onclick="toggleSupplierForm()"
+                                                    class="btn btn-outline-secondary btn-sm">Cancel</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Supplier List -->
+                                        <div id="supplierList" class="d-flex flex-column gap-2"
+                                            style="max-height: 300px; overflow-y: auto;">
+                                            <!-- Populated by JS -->
+                                        </div>
+                                        <div id="supplierEmpty" class="text-center p-3 text-muted small"
+                                            style="display: none;">
+                                            No suppliers added.
                                         </div>
                                     </div>
                                 </div>

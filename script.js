@@ -322,37 +322,164 @@ function verifyAdminPin() {
     });
 }
 
+
 function switchAdminTab(tab, event) {
     if (event) event.preventDefault();
 
     document.querySelectorAll('.admin-tab-pane').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-pills .nav-link').forEach(el => el.classList.remove('active'));
 
-    if (tab === 'roster') {
-        document.getElementById('tabRoster').style.display = 'block';
+    // Handle Tabs
+    if (tab === 'inventory') {
+        document.getElementById('tabInventory').style.display = 'block';
+        loadInventory();
+    } else if (tab === 'suppliers') {
+        document.getElementById('tabSuppliers').style.display = 'block';
+        loadSuppliers();
     }
 
-    // robust active class toggling
+    // Toggle Active Class
     if (event && event.currentTarget) {
         event.currentTarget.classList.add('active');
     }
 }
 
-// --- NEW ADMIN TOOLS: RECEPTION UTILITIES ---
+// --- NEW ADMIN TOOLS: INVENTORY & SUPPLIERS ---
 
-// 1. WhatsApp Bill Generator
-function generateBill() {
-    const service = document.getElementById('billService').value;
-    const price = document.getElementById('billPrice').value;
-    const notes = document.getElementById('billNotes').value;
+// 1. INVENTORY SYSTEM
+function toggleInventoryForm() {
+    const form = document.getElementById('inventoryForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
 
-    if (!service || !price) return alert("Enter Service and Price");
+function loadInventory() {
+    const list = document.getElementById('inventoryList');
+    const empty = document.getElementById('inventoryEmpty');
+    const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
 
-    const text = `*INVOICE: Klinik Haya*\n\nService: ${service}\nAmount: RM${price}\nNotes: ${notes}\n\nPlease proceed with payment to:\nMaybank 5620-1234-5678\n(Klinik Haya Sdn Bhd)`;
+    if (items.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
 
-    navigator.clipboard.writeText(text).then(() => {
-        alert("✅ Bill Copied to Clipboard!");
+    empty.style.display = 'none';
+    let html = '';
+
+    // Sort by Expiry Date
+    items.sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
+
+    items.forEach((item, index) => {
+        // Expiry Check
+        const today = new Date();
+        const expDate = new Date(item.expiry);
+        const daysLeft = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+
+        let statusClass = '';
+        if (daysLeft < 0) statusClass = 'table-danger'; // Expired
+        else if (daysLeft < 30) statusClass = 'table-warning'; // Expiring soon
+
+        html += `
+        <tr class="${statusClass}">
+            <td>
+                <div class="fw-bold text-dark">${item.name}</div>
+                ${daysLeft < 0 ? '<span class="badge bg-danger" style="font-size:0.6rem">EXPIRED</span>' : ''}
+            </td>
+            <td>${item.qty}</td>
+            <td>
+                <div class="small">${item.expiry}</div>
+            </td>
+            <td class="text-end">
+                <button onclick="deleteInventoryItem(${index})" class="btn btn-outline-danger btn-sm border-0 py-0"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
     });
+
+    list.innerHTML = html;
+}
+
+function addInventoryItem() {
+    const name = document.getElementById('invName').value;
+    const qty = document.getElementById('invQty').value;
+    const expiry = document.getElementById('invExpiry').value;
+
+    if (!name || !qty || !expiry) return alert("Please fill all fields");
+
+    const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
+    items.push({ name, qty, expiry });
+    localStorage.setItem('adminInventory', JSON.stringify(items));
+
+    // Reset Form
+    document.getElementById('invName').value = '';
+    document.getElementById('invQty').value = '';
+    document.getElementById('invExpiry').value = '';
+    toggleInventoryForm();
+    loadInventory();
+}
+
+function deleteInventoryItem(index) {
+    if (!confirm("Remove this item?")) return;
+    const items = JSON.parse(localStorage.getItem('adminInventory') || '[]');
+    items.splice(index, 1);
+    localStorage.setItem('adminInventory', JSON.stringify(items));
+    loadInventory();
+}
+
+// 2. SUPPLIER DIRECTORY
+function toggleSupplierForm() {
+    const form = document.getElementById('supplierForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function loadSuppliers() {
+    const list = document.getElementById('supplierList');
+    const empty = document.getElementById('supplierEmpty');
+    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
+
+    if (suppliers.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+    }
+
+    empty.style.display = 'none';
+    list.innerHTML = suppliers.map((sup, index) => `
+        <div class="bg-white p-3 border rounded d-flex justify-content-between align-items-center">
+            <div>
+                <div class="fw-bold text-dark">${sup.name}</div>
+                <div class="small text-muted"><i class="fas fa-phone-alt me-1"></i> ${sup.phone}</div>
+                <div class="badge bg-light text-dark border mt-1">${sup.category}</div>
+            </div>
+            <button onclick="deleteSupplier(${index})" class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function addSupplier() {
+    const name = document.getElementById('supName').value;
+    const phone = document.getElementById('supPhone').value;
+    const category = document.getElementById('supCategory').value;
+
+    if (!name || !phone) return alert("Name and Phone are required");
+
+    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
+    suppliers.push({ name, phone, category });
+    localStorage.setItem('adminSuppliers', JSON.stringify(suppliers));
+
+    // Reset
+    document.getElementById('supName').value = '';
+    document.getElementById('supPhone').value = '';
+    document.getElementById('supCategory').value = '';
+    toggleSupplierForm();
+    loadSuppliers();
+}
+
+function deleteSupplier(index) {
+    if (!confirm("Remove this supplier?")) return;
+    const suppliers = JSON.parse(localStorage.getItem('adminSuppliers') || '[]');
+    suppliers.splice(index, 1);
+    localStorage.setItem('adminSuppliers', JSON.stringify(suppliers));
+    loadSuppliers();
 }
 
 
