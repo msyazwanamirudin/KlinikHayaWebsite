@@ -2,7 +2,7 @@ AOS.init({ duration: 800, once: true });
 
 // --- Navbar Scroll Effect & ScrollSpy ---
 const navLinks = document.querySelectorAll('.nav-link');
-const sections = document.querySelectorAll('section');
+const sections = document.querySelectorAll('section, footer'); // Include Footer
 
 window.addEventListener('scroll', function () {
     const nav = document.querySelector('.navbar');
@@ -14,6 +14,7 @@ window.addEventListener('scroll', function () {
     let current = '';
     sections.forEach(section => {
         const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
         if (pageYOffset >= (sectionTop - 150)) {
             const id = section.getAttribute('id');
             if (id) current = id;
@@ -22,7 +23,7 @@ window.addEventListener('scroll', function () {
 
     navLinks.forEach(link => {
         link.classList.remove('active-nav');
-        if (link.getAttribute('href').includes(current)) {
+        if (link.getAttribute('href') && link.getAttribute('href').includes(current)) {
             link.classList.add('active-nav');
         }
     });
@@ -170,6 +171,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pinInput) {
         pinInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') verifyAdminPin();
+        });
+    }
+
+    // Promo Image Live Preview
+    const promoBgInput = document.getElementById('promoImgInput');
+    if (promoBgInput) {
+        promoBgInput.addEventListener('input', function () {
+            const preview = document.getElementById('promoImgPreview');
+            if (this.value) {
+                preview.src = this.value;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
         });
     }
 });
@@ -427,6 +442,15 @@ function loadPromoForm() {
     document.getElementById('promoTitleInput').value = data.title || '';
     document.getElementById('promoDescInput').value = data.desc || '';
     document.getElementById('promoImgInput').value = data.img || '';
+
+    // Initial Preview Load
+    const preview = document.getElementById('promoImgPreview');
+    if (data.img) {
+        preview.src = data.img;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
 }
 
 function loadPromo() {

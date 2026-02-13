@@ -801,6 +801,12 @@
                                             <label class="small text-muted">Image URL</label>
                                             <input type="text" id="promoImgInput" class="form-control form-control-sm"
                                                 placeholder="https://...">
+                                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                                <i class="fas fa-info-circle me-1"></i> Note: Please ensure the URL is a
+                                                direct link to an image (ends in .jpg, .png, etc).
+                                            </small>
+                                            <img id="promoImgPreview" src="" class="img-fluid rounded mt-2 border"
+                                                style="display: none; max-height: 150px; object-fit: cover; width: 100%;">
                                         </div>
                                         <button type="submit" class="btn btn-success btn-sm w-100">Save &
                                             Publish</button>
