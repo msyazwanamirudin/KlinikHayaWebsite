@@ -258,9 +258,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach Emergency Reset to Top Bar + Footer
     const resetTrigger = document.getElementById('topDoctorDuty');
+    const mobileResetTrigger = document.getElementById('liveStatusText'); // Mobile fallback
+
     if (resetTrigger) {
         resetTrigger.style.cursor = 'default';
         resetTrigger.addEventListener('click', handleEmergencyReset);
+    }
+    if (mobileResetTrigger) {
+        mobileResetTrigger.style.cursor = 'default';
+        mobileResetTrigger.addEventListener('click', handleEmergencyReset);
     }
 
     // Also add to Footer Status Text for easier access on mobile
