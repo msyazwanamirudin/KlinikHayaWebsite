@@ -508,14 +508,35 @@ function addRosterRule() {
     }
 
     firebaseLoad('roster/rules', []).then(rules => {
-        // Remove existing conflict (same day/date)
+        // Validation Logic
+        let existingIndex = -1;
+
         if (newRule.type === 'weekly') {
-            rules = rules.filter(r => !(r.type === 'weekly' && r.day === newRule.day));
+            existingIndex = rules.findIndex(r => r.type === 'weekly' && r.day === newRule.day);
         } else {
-            rules = rules.filter(r => !(r.type === 'date' && r.date === newRule.date));
+            existingIndex = rules.findIndex(r => r.type === 'date' && r.date === newRule.date);
         }
 
+        if (existingIndex !== -1) {
+            const existing = rules[existingIndex];
+
+            // Scenario 1: Same Doctor, Same Date/Day (Duplicate)
+            if (existing.doc === newRule.doc) {
+                alert(`Error: ${existing.doc} is already assigned to this slot (${existing.shift}).\nCannot duplicate.`);
+                return;
+            }
+
+            // Scenario 2: Different Doctor, Same Date/Day (Conflict)
+            const confirmOverwrite = confirm(`Conflict: This slot is currently assigned to ${existing.doc} (${existing.shift}).\n\nOverwrite with ${newRule.doc}?`);
+            if (!confirmOverwrite) return;
+
+            // If confirmed, we replace (filter out old)
+            rules.splice(existingIndex, 1);
+        }
+
+        // Add New Rule
         rules.push(newRule);
+
         firebaseSave('roster/rules', rules).then(() => {
             toggleRosterForm();
             loadRosterAdmin();

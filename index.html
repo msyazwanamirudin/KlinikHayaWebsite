@@ -888,8 +888,20 @@
                                         <!-- Inputs -->
                                         <div class="mb-2">
                                             <div id="inputDateGroup">
-                                                <label class="small text-muted">Date</label>
-                                                <input type="date" id="rosterDate" class="form-control form-control-sm">
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <label class="small text-muted">From</label>
+                                                        <input type="date" id="rosterDateStart"
+                                                            class="form-control form-control-sm">
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="small text-muted">To (Optional)</label>
+                                                        <input type="date" id="rosterDateEnd"
+                                                            class="form-control form-control-sm">
+                                                    </div>
+                                                </div>
+                                                <div class="form-text" style="font-size: 0.75rem;">Leave "To" empty for
+                                                    single day.</div>
                                             </div>
                                             <div id="inputDayGroup" style="display:none;">
                                                 <label class="small text-muted">Day of Week</label>
