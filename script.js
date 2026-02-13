@@ -15,7 +15,8 @@ window.addEventListener('scroll', function () {
     sections.forEach(section => {
         const sectionTop = section.offsetTop;
         if (pageYOffset >= (sectionTop - 150)) {
-            current = section.getAttribute('id');
+            const id = section.getAttribute('id');
+            if (id) current = id;
         }
     });
 
@@ -227,7 +228,8 @@ function getRosterRules() {
 function addRosterRule() {
     const doc = document.getElementById('rosterDoctorSelect').value;
     const type = document.getElementById('rosterRuleType').value;
-    let rule = { id: Date.now(), doc, type };
+    const shift = document.getElementById('rosterShiftSelect').value;
+    let rule = { id: Date.now(), doc, type, shift };
 
     if (type === 'weekly') {
         rule.day = parseInt(document.getElementById('rosterDaySelect').value);
@@ -274,13 +276,81 @@ function renderRosterRules() {
         <li class="list-group-item">
             <div>
                 <span class="badge bg-secondary me-2">${r.type === 'weekly' ? 'Rep' : 'Date'}</span>
-                <strong>${r.doc}</strong>
+                <strong>${r.doc}</strong> <small class="text-primary">(${r.shift})</small>
                 <br>
                 <small class="text-muted">${r.type === 'weekly' ? 'Every ' + r.dayName : r.date}</small>
             </div>
             <button onclick="deleteRule(${r.id})" class="btn btn-sm text-danger"><i class="fas fa-trash"></i></button>
         </li>
     `).join('');
+}
+
+// --- PUBLIC ROSTER VIEW (PATIENT MODAL) ---
+function openRosterModal() {
+    const modal = document.getElementById('rosterModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        generatePublicRoster();
+    }
+}
+
+function closeRosterModal() {
+    const modal = document.getElementById('rosterModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function generatePublicRoster() {
+    const list = document.getElementById('publicRosterList');
+    const rules = getRosterRules();
+    let html = '';
+
+    const now = new Date();
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+
+        const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dateStr = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        const dateISO = d.toISOString().split('T')[0];
+        const dayIdx = d.getDay();
+
+        // Resolve Doctor + Shift
+        // 1. Date Rule
+        const dateRule = rules.find(r => r.type === 'date' && r.date === dateISO);
+        // 2. Weekly Rule
+        const weekRule = rules.find(r => r.type === 'weekly' && r.day === dayIdx);
+
+        let docName = "";
+        let shift = "Full Day";
+
+        if (dateRule) {
+            docName = dateRule.doc;
+            shift = dateRule.shift;
+        } else if (weekRule) {
+            docName = weekRule.doc;
+            shift = weekRule.shift;
+        } else {
+            // Default
+            if (dayIdx === 0) docName = "Dr. Wong (Locum)";
+            else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin (Specialist)";
+            else docName = "Dr. Sara (General)";
+        }
+
+        html += `
+        <li class="list-group-item">
+            <div class="roster-date text-center lh-1">
+                <div class="small text-muted text-uppercase">${dayStr}</div>
+                <div class="h5 mb-0">${d.getDate()}</div>
+            </div>
+            <div class="roster-info">
+                <div class="fw-bold text-dark">${docName}</div>
+                <div class="small text-muted">${shift}</div>
+            </div>
+        </li>`;
+    }
+
+    if (list) list.innerHTML = html;
 }
 
 function updateDoctorRoster(isOpen) {
@@ -294,8 +364,8 @@ function updateDoctorRoster(isOpen) {
     }
 
     const now = new Date();
-    const todayDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const day = now.getDay(); // 0-6
+    const todayDate = now.toISOString().split('T')[0];
+    const day = now.getDay();
 
     // PRIORITY 1: Specific Date Rule
     const rules = getRosterRules();
@@ -305,11 +375,14 @@ function updateDoctorRoster(isOpen) {
     const weekRule = rules.find(r => r.type === 'weekly' && r.day === day);
 
     let doctorName = "";
+    let shiftInfo = "";
 
     if (dateRule) {
-        doctorName = dateRule.doc + ' <i class="fas fa-star text-warning small" title="Special Date"></i>';
+        doctorName = dateRule.doc;
+        shiftInfo = dateRule.shift;
     } else if (weekRule) {
         doctorName = weekRule.doc;
+        shiftInfo = weekRule.shift;
     } else {
         // PRIORITY 3: Default Hardcoded Logic
         if (day === 0) doctorName = "Dr. Wong (Locum)";
@@ -317,8 +390,12 @@ function updateDoctorRoster(isOpen) {
         else doctorName = "Dr. Sara (General)";
     }
 
-    if (docText) docText.innerHTML = `<span class="fw-bold">${doctorName}</span>`;
-    if (topDocText) topDocText.innerHTML = doctorName.replace(/<[^>]*>?/gm, ''); // Strip HTML for top bar
+    const displayText = shiftInfo && shiftInfo !== 'Full Day'
+        ? `${doctorName} <small class='text-white-50'>(${shiftInfo})</small>`
+        : doctorName;
+
+    if (docText) docText.innerHTML = `<span class="fw-bold">${displayText}</span>`;
+    if (topDocText) topDocText.innerHTML = doctorName.split('(')[0]; // Keep top bar short
 }
 
 
