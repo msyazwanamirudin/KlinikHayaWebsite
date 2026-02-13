@@ -188,26 +188,34 @@ function updateDoctorRoster(isOpen) {
 
     // Check Firebase rules first, then fall back to hardcoded
     firebaseLoad('roster/rules', []).then(rules => {
-        let doctorName = "";
+        // FILTER all matching rules (Priority: Date > Weekly)
+        const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
+        const weekRules = rules.filter(r => r.type === 'weekly' && r.day === day);
 
-        // Priority 1: Date-specific rule
-        const dateRule = rules.find(r => r.type === 'date' && r.date === dateISO);
-        // Priority 2: Weekly rule
-        const weekRule = rules.find(r => r.type === 'weekly' && r.day === day);
+        let activeRules = [];
+        if (dateRules.length > 0) activeRules = dateRules;
+        else if (weekRules.length > 0) activeRules = weekRules;
 
-        if (dateRule) {
-            doctorName = dateRule.doc;
-        } else if (weekRule) {
-            doctorName = weekRule.doc;
+        let displayHtml = "";
+        let simpleText = "";
+
+        if (activeRules.length > 0) {
+            // Join Multiple Doctors
+            displayHtml = activeRules.map(r => `<div>${r.doc} <span class="small text-muted">(${r.shift})</span></div>`).join('');
+            simpleText = activeRules.map(r => r.doc).join(', ');
         } else {
             // Default hardcoded schedule
+            let doctorName = "";
             if (day === 0) doctorName = "Dr. Wong (Locum)";
             else if (day === 2 || day === 4 || day === 6) doctorName = "Dr. Amin (Specialist)";
             else doctorName = "Dr. Sara (General)";
+
+            displayHtml = `<span class="fw-bold">${doctorName}</span>`;
+            simpleText = doctorName;
         }
 
-        if (docText) docText.innerHTML = `<span class="fw-bold">${doctorName}</span>`;
-        if (topDocText) topDocText.innerHTML = doctorName;
+        if (docText) docText.innerHTML = displayHtml;
+        if (topDocText) topDocText.innerHTML = simpleText;
     });
 }
 
@@ -240,24 +248,32 @@ function generatePublicRoster() {
             const dateISO = d.toISOString().split('T')[0];
             const dayIdx = d.getDay();
 
-            // Resolve Doctor + Shift (priority: date rule > weekly rule > default)
-            const dateRule = rules.find(r => r.type === 'date' && r.date === dateISO);
-            const weekRule = rules.find(r => r.type === 'weekly' && r.day === dayIdx);
+            // Filter Rules (Priority: Date > Weekly)
+            const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
+            const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
 
-            let docName = "";
-            let shift = "Full Day";
+            let activeRules = [];
+            if (dateRules.length > 0) activeRules = dateRules;
+            else if (weekRules.length > 0) activeRules = weekRules;
 
-            if (dateRule) {
-                docName = dateRule.doc;
-                shift = dateRule.shift;
-            } else if (weekRule) {
-                docName = weekRule.doc;
-                shift = weekRule.shift;
+            let docHtml = "";
+
+            if (activeRules.length > 0) {
+                // Multiple Doctors
+                docHtml = activeRules.map(r => `
+                    <div class="mb-1">
+                        <div class="fw-bold text-dark">${r.doc}</div>
+                        <div class="small text-muted">${r.shift}</div>
+                    </div>`).join('');
             } else {
                 // Default hardcoded schedule
+                let docName = "Dr. Sara (General)";
                 if (dayIdx === 0) docName = "Dr. Wong (Locum)";
                 else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin (Specialist)";
-                else docName = "Dr. Sara (General)";
+
+                docHtml = `
+                    <div class="fw-bold text-dark">${docName}</div>
+                    <div class="small text-muted">Full Day</div>`;
             }
 
             html += `
@@ -266,9 +282,8 @@ function generatePublicRoster() {
                     <div class="small text-muted text-uppercase">${dayStr}</div>
                     <div class="h5 mb-0">${d.getDate()}</div>
                 </div>
-                <div class="roster-info">
-                    <div class="fw-bold text-dark">${docName}</div>
-                    <div class="small text-muted">${shift}</div>
+                <div class="roster-info d-flex flex-column align-items-end text-end" style="width: 100%;">
+                    ${docHtml}
                 </div>
             </li>`;
         }
@@ -740,42 +755,39 @@ function addRosterRule() {
         // Check conflicts for ALL new rules
         newRulesToAdd.forEach(newRule => {
             let existingIndex = -1;
+            // STRICT DUPLICATE CHECK: Same Doctor, Same Day, Same Shift
+            // We NO LONGER check for "Different Doctor" as a conflict.
             if (newRule.type === 'weekly') {
-                existingIndex = rules.findIndex(r => r.type === 'weekly' && r.day === newRule.day);
+                existingIndex = rules.findIndex(r =>
+                    r.type === 'weekly' &&
+                    r.day === newRule.day &&
+                    r.doc === newRule.doc &&
+                    r.shift === newRule.shift
+                );
             } else {
-                existingIndex = rules.findIndex(r => r.type === 'date' && r.date === newRule.date);
+                existingIndex = rules.findIndex(r =>
+                    r.type === 'date' &&
+                    r.date === newRule.date &&
+                    r.doc === newRule.doc &&
+                    r.shift === newRule.shift
+                );
             }
 
             if (existingIndex !== -1) {
-                const existing = rules[existingIndex];
-                if (existing.doc === newRule.doc) {
-                    duplicates.push(`${newRule.date || 'Day ' + newRule.day} (${existing.shift})`);
-                } else {
-                    conflicts.push(`${newRule.date || 'Day ' + newRule.day}: ${existing.doc} -> ${newRule.doc}`);
-                }
+                duplicates.push(`${newRule.date || 'Day ' + newRule.day} (${newRule.doc} - ${newRule.shift})`);
             }
         });
 
         if (duplicates.length > 0) {
-            alert(`Error: Duplicate assignments found for ${doc}:\n` + duplicates.slice(0, 3).join('\n') + (duplicates.length > 3 ? '\n...' : ''));
+            alert(`Error: Duplicate assignments found:\n` + duplicates.slice(0, 3).join('\n') + (duplicates.length > 3 ? '\n...' : ''));
             return;
         }
 
-        if (conflicts.length > 0) {
-            const confirmOverwrite = confirm(`Found ${conflicts.length} conflicts:\n` + conflicts.slice(0, 3).join('\n') + (conflicts.length > 3 ? '\n...' : '') + `\n\nOverwrite multiple?`);
-            if (!confirmOverwrite) return;
-        }
-
         // Apply Changes:
-        // 1. Filter out old conflicting rules
-        rules = rules.filter(existing => {
-            const isConflict = newRulesToAdd.some(newRule => {
-                if (newRule.type === 'weekly' && existing.type === 'weekly' && newRule.day === existing.day) return true;
-                if (newRule.type === 'date' && existing.type === 'date' && newRule.date === existing.date) return true;
-                return false;
-            });
-            return !isConflict; // Keep if NO conflict
-        });
+        // We do NOT filter out old rules anymore, unless checking for exact duplicates?
+        // Actually, we don't need to filter anything if we allow multiple.
+        // But if we found a duplicate, we returned above.
+        // So here, we just APPEND.
 
         // 2. Add all new rules
         rules.push(...newRulesToAdd);
