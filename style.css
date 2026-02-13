@@ -32,12 +32,28 @@ body {
     background-color: #f8fafc;
     /* Slate 50 */
     overflow-x: hidden;
-    user-select: none;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     margin: 0;
     padding: 0;
+}
+
+/* Allow text selection on content, but not on UI elements */
+button,
+.nav-link,
+.chip,
+.btn,
+.navbar-toggler,
+.chat-widget-btn,
+.back-to-top {
+    user-select: none;
+}
+
+/* Scroll offset for sticky header */
+section,
+footer {
+    scroll-margin-top: 100px;
 }
 
 /* Push Footer to Bottom */
@@ -53,25 +69,6 @@ footer {
 body.modal-open {
     overflow: hidden;
     padding-right: 15px;
-}
-
-/* --- ADMIN MODAL --- */
-.admin-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    /* Darker background for focus */
-    backdrop-filter: blur(8px);
-    z-index: 10000;
-    /* Highest Priority */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    animation: fadeIn 0.3s forwards;
 }
 
 
@@ -560,6 +557,16 @@ h4,
     height: 15px;
     border-radius: 50%;
     border: 2px solid white;
+}
+
+/* --- Footer Social Icons --- */
+footer a.fs-5 {
+    transition: color 0.3s, transform 0.3s;
+}
+
+footer a.fs-5:hover {
+    color: var(--secondary) !important;
+    transform: translateY(-3px);
 }
 
 /* --- Back To Top --- */

@@ -1,5 +1,14 @@
 AOS.init({ duration: 800, once: true });
 
+// --- Loading Screen Dismissal ---
+window.addEventListener('load', () => {
+    const loader = document.getElementById('loadingScreen');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+    }
+});
+
 // --- Navbar Scroll Effect & ScrollSpy ---
 const navLinks = document.querySelectorAll('.nav-link');
 const sections = document.querySelectorAll('section, footer'); // Include Footer
@@ -842,8 +851,12 @@ function saveState() {
 }
 
 function goBack() {
+    // Remove any stale quick replies first
+    const qr = document.getElementById('quickReplies');
+    if (qr) qr.remove();
+
     if (chatState.history.length === 0) {
-        addMessage("Cannot go back further. Restarting...");
+        addMessage("We're back at the beginning. How can I help you?");
         resetChat();
         return;
     }
@@ -859,7 +872,7 @@ function goBack() {
     } else if (chatState.flow) {
         nextQuestion(); // Reruns question generation based on step
     } else {
-        addMessage("Back to Main Menu.");
+        addMessage("Sure, let me take you back. What would you like to do?");
         addMainMenu();
     }
 }

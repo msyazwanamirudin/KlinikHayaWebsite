@@ -9,6 +9,15 @@
     <title>Klinik | The Future of Family Care</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 
+    <!-- Open Graph Meta Tags (Social Sharing) -->
+    <meta property="og:title" content="Klinik | The Future of Family Care">
+    <meta property="og:description"
+        content="AI-powered health triage, premium fertility support, and 24/7 family care in Bangi, Selangor.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=1200&q=80">
+    <meta property="og:url" content="https://klinik.com.my">
+    <meta name="twitter:card" content="summary_large_image">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome 6 Pro (CDN) -->
@@ -27,6 +36,24 @@
 </head>
 
 <body data-bs-spy="scroll" data-bs-target="#navbar-main" data-bs-offset="100">
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen"
+        style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity 0.5s">
+        <div style="text-align:center">
+            <div
+                style="width:50px;height:50px;border:4px solid #e2e8f0;border-top:4px solid #0f766e;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px">
+            </div>
+            <p style="color:#64748b;font-family:Outfit,sans-serif;font-size:0.9rem">Loading Klinik...</p>
+        </div>
+    </div>
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+    </style>
 
     <!-- Live Status Bar -->
     <div class="status-bar d-flex justify-content-center align-items-center">
@@ -55,8 +82,8 @@
                         CARE</span>
                 </div>
             </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navContent">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent"
+                aria-label="Toggle navigation menu" aria-expanded="false">
                 <i class="fas fa-bars fs-2"></i>
             </button>
             <div class="collapse navbar-collapse" id="navContent">
@@ -115,7 +142,8 @@
                 <div class="col-lg-6 position-relative" data-aos="zoom-out" data-aos-delay="200">
                     <div class="hero-img-box">
                         <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"
-                            class="img-fluid" alt="Doctor with Tablet">
+                            class="img-fluid" alt="Doctor with Tablet" loading="lazy"
+                            onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#ccfbf1,#0f766e)';this.style.minHeight='400px';this.style.borderRadius='20px';this.src=''">
                     </div>
                 </div>
             </div>
@@ -862,6 +890,16 @@
                 </div>
             </div>
             <hr class="border-secondary my-5">
+            <div class="d-flex justify-content-center gap-3 mb-3">
+                <a href="https://facebook.com" target="_blank" class="text-white-50 fs-5" aria-label="Facebook"><i
+                        class="fab fa-facebook-f"></i></a>
+                <a href="https://instagram.com" target="_blank" class="text-white-50 fs-5" aria-label="Instagram"><i
+                        class="fab fa-instagram"></i></a>
+                <a href="https://tiktok.com" target="_blank" class="text-white-50 fs-5" aria-label="TikTok"><i
+                        class="fab fa-tiktok"></i></a>
+                <a href="https://wa.me/60172032048" target="_blank" class="text-white-50 fs-5" aria-label="WhatsApp"><i
+                        class="fab fa-whatsapp"></i></a>
+            </div>
             <div class="text-center text-white-50 small" id="adminTrigger" style="cursor: default;">
                 &copy; 2026 Klinik Sdn Bhd. All rights reserved.
             </div>
@@ -870,14 +908,15 @@
 
 
     <!-- Back to Top Button -->
-    <a href="#" class="back-to-top d-flex align-items-center justify-content-center" id="backToTop">
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center" id="backToTop"
+        aria-label="Back to top">
         <i class="fas fa-arrow-up"></i>
     </a>
 
     <!-- --- OVERLAYS --- -->
 
     <!-- Chat Widget Button -->
-    <div class="chat-widget-btn" onclick="toggleChat()">
+    <div class="chat-widget-btn" onclick="toggleChat()" role="button" aria-label="Open chat assistant">
         <i class="fas fa-robot"></i>
         <div class="chat-badge"></div>
     </div>
