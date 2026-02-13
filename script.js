@@ -501,7 +501,10 @@ function loadPromo() {
     if (data.active) {
         section.classList.remove('d-none');
         document.getElementById('promoTitle').innerText = data.title || "Special Offer";
-        document.getElementById('promoText').innerText = data.desc || "";
+        // Ensure description is visible even on mobile
+        const desc = data.desc || "";
+        document.getElementById('promoText').innerText = desc;
+        document.getElementById('promoText').style.display = desc ? 'block' : 'none';
 
         const img = document.getElementById('promoImage');
         if (data.img) {
