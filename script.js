@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let resetTimer = null;
     const resetTrigger = document.getElementById('topDoctorDuty');
     if (resetTrigger) {
-        resetTrigger.style.cursor = 'pointer'; // Hint at interactivity
+        resetTrigger.style.cursor = 'default'; // Hidden in plain sight
         resetTrigger.addEventListener('click', () => {
             resetCount++;
             if (resetCount === 1) resetTimer = setTimeout(() => { resetCount = 0; }, 2000);
