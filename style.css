@@ -1089,18 +1089,150 @@ body.modal-open #chatWindow {
     min-height: 60px;
 }
 
-.roster-week-table tr:hover td {
-    background-color: #f0fdfa;
+/* ═══ PUBLIC ROSTER: MONTHLY CALENDAR ═══ */
+.roster-calendar-container {
+    overflow-x: auto;
 }
 
-/* Responsive: on small screens, allow horizontal scroll */
+.roster-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.roster-cal-header {
+    background: #0f766e;
+    color: white;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+    letter-spacing: 0.5px;
+}
+
+.roster-cal-cell {
+    background: white;
+    min-height: 80px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: background 0.2s;
+}
+
+.roster-cal-cell:hover {
+    background: #f8fafc;
+}
+
+.roster-cal-empty {
+    background: #f8fafc;
+    min-height: 40px;
+}
+
+.roster-cal-today {
+    background: #f0fdfa !important;
+    box-shadow: inset 0 0 0 2px #0f766e;
+}
+
+.roster-cal-past {
+    opacity: 0.5;
+}
+
+.roster-cal-date {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+}
+
+.roster-cal-day-name {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.roster-cal-entry {
+    display: flex;
+    flex-direction: column;
+    padding: 3px 5px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+.roster-shift-on {
+    background: #dcfce7;
+    border-left: 3px solid #22c55e;
+}
+
+.roster-shift-off {
+    background: #fee2e2;
+    border-left: 3px solid #ef4444;
+}
+
+.roster-doc-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.7rem;
+}
+
+.roster-shift-off .roster-doc-name {
+    color: #94a3b8;
+}
+
+.roster-shift-label {
+    font-size: 0.6rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.roster-shift-off .roster-shift-label {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* Responsive: stack on mobile */
 @media (max-width: 576px) {
-    .roster-week-table {
-        font-size: 0.75rem !important;
+    .roster-cal-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
     }
 
-    .roster-week-table th,
-    .roster-week-table td {
-        padding: 4px 3px;
+    .roster-cal-cell {
+        min-height: 60px;
+        padding: 3px;
+    }
+
+    .roster-cal-date {
+        font-size: 0.7rem;
+    }
+
+    .roster-cal-day-name {
+        display: none;
+    }
+
+    .roster-cal-entry {
+        padding: 2px 3px;
+        font-size: 0.6rem;
+    }
+
+    .roster-doc-name {
+        font-size: 0.6rem;
+    }
+
+    .roster-shift-label {
+        font-size: 0.5rem;
+    }
+
+    .roster-cal-header {
+        font-size: 0.6rem;
+        padding: 5px 2px;
     }
 }

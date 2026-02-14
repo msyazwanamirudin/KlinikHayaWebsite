@@ -239,70 +239,118 @@ function openRosterModal() {
     const modal = document.getElementById('rosterModal');
     if (modal) {
         modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
         generatePublicRoster();
     }
 }
 
 function closeRosterModal() {
     const modal = document.getElementById('rosterModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+}
+
+// --- MONTH CALENDAR STATE ---
+let _rosterViewMonth = new Date(); // Tracks which month is displayed
+
+function changeRosterMonth(delta) {
+    _rosterViewMonth.setMonth(_rosterViewMonth.getMonth() + delta);
+    generatePublicRoster();
 }
 
 function generatePublicRoster() {
-    const tbody = document.getElementById('publicRosterList');
+    const container = document.getElementById('publicRosterCalendar');
+    const label = document.getElementById('rosterMonthLabel');
+    if (!container) return;
 
-    // Use CACHED roster rules (no Firebase read)
+    const viewDate = new Date(_rosterViewMonth.getFullYear(), _rosterViewMonth.getMonth(), 1);
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    // Update month label
+    if (label) {
+        label.textContent = viewDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    }
+
     getCachedRoster().then(rules => {
-        let html = '';
-        const now = new Date();
+        const today = new Date();
+        const todayISO = today.toISOString().split('T')[0];
 
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(now);
-            d.setDate(now.getDate() + i);
+        // Calendar math
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        // Monday=0 start: convert JS getDay (Sun=0) to Mon=0
+        let startDow = firstDay.getDay() - 1;
+        if (startDow < 0) startDow = 6;
 
-            const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
-            const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        // Build header row
+        const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        let html = '<div class="roster-cal-grid">';
+        dayHeaders.forEach(dh => {
+            html += `<div class="roster-cal-header">${dh}</div>`;
+        });
+
+        // Empty cells before first day
+        for (let e = 0; e < startDow; e++) {
+            html += '<div class="roster-cal-cell roster-cal-empty"></div>';
+        }
+
+        // Day cells
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(year, month, day);
             const dateISO = d.toISOString().split('T')[0];
             const dayIdx = d.getDay();
+            const isToday = dateISO === todayISO;
+            const isPast = d < today && !isToday;
 
-            // Filter Rules (Priority: Date > Weekly)
+            // Filter rules (Priority: Date > Weekly)
             const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
             const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
+            let activeRules = dateRules.length > 0 ? dateRules : (weekRules.length > 0 ? weekRules : []);
 
-            let activeRules = [];
-            if (dateRules.length > 0) activeRules = dateRules;
-            else if (weekRules.length > 0) activeRules = weekRules;
+            // Fallback default if no rules
+            if (activeRules.length === 0) {
+                let docName = "Dr. Hanim";
+                if (dayIdx === 0) docName = "Dr. Wong";
+                else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
+                activeRules = [{ doc: docName, shift: 'Full Day' }];
+            }
 
-            const isToday = i === 0;
-            const rowHighlight = isToday ? ' style="background-color: #f0fdfa; font-weight: 500;"' : '';
-            const todayBadge = isToday ? ' <span class="badge bg-primary" style="font-size:0.65rem;">TODAY</span>' : '';
+            const todayClass = isToday ? ' roster-cal-today' : '';
+            const pastClass = isPast ? ' roster-cal-past' : '';
+            const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-            if (activeRules.length > 0) {
-                activeRules.forEach((r, idx) => {
-                    const isOff = r.shift === 'Off';
-                    const shiftClass = isOff ? 'text-danger fw-bold' : 'text-success';
-                    const shiftLabel = isOff ? '❌ OFF' : r.shift;
-                    html += `<tr${rowHighlight}>
-                        ${idx === 0 ? `<td rowspan="${activeRules.length}" class="align-middle"><div class="fw-bold">${dayStr}</div><div class="small text-muted">${dateStr}</div>${todayBadge}</td>` : ''}
-                        <td>${isOff ? `<span class="text-muted text-decoration-line-through">${r.doc}</span>` : r.doc}</td>
-                        <td><span class="${shiftClass}">${shiftLabel}</span></td>
-                    </tr>`;
-                });
-            } else {
-                // Default hardcoded schedule
-                let docName = "Dr. Sara (General)";
-                if (dayIdx === 0) docName = "Dr. Wong (Locum)";
-                else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin (Specialist)";
+            html += `<div class="roster-cal-cell${todayClass}${pastClass}">`;
+            html += `<div class="roster-cal-date">${day}<span class="roster-cal-day-name">${dayLabel}</span></div>`;
 
-                html += `<tr${rowHighlight}>
-                    <td><div class="fw-bold">${dayStr}</div><div class="small text-muted">${dateStr}</div>${todayBadge}</td>
-                    <td>${docName}</td>
-                    <td><span class="text-success">Full Day</span></td>
-                </tr>`;
+            activeRules.forEach(r => {
+                const isOff = r.shift === 'Off';
+                const shiftClass = isOff ? 'roster-shift-off' : 'roster-shift-on';
+                const docDisplay = r.doc.replace(/ \(.*\)/, ''); // Shorten: remove specialty
+                const shiftLabel = isOff ? 'OFF' : r.shift;
+                html += `<div class="roster-cal-entry ${shiftClass}">`;
+                html += `<span class="roster-doc-name">${isOff ? '<s>' + docDisplay + '</s>' : docDisplay}</span>`;
+                html += `<span class="roster-shift-label">${shiftLabel}</span>`;
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+        }
+
+        // Empty cells after last day to fill the grid row
+        const totalCells = startDow + daysInMonth;
+        const remainder = totalCells % 7;
+        if (remainder > 0) {
+            for (let e = 0; e < 7 - remainder; e++) {
+                html += '<div class="roster-cal-cell roster-cal-empty"></div>';
             }
         }
 
-        if (tbody) tbody.innerHTML = html;
+        html += '</div>';
+        container.innerHTML = html;
     });
 }
 
@@ -557,7 +605,33 @@ function switchAdminTab(tab, event) {
 
 // --- ROSTER ADMIN LOGIC ---
 
-let latestRosterRules = []; // Store for access by index
+// --- ROSTER ADMIN LOGIC ---
+
+// --- ADMIN ROSTER STATE ---
+let latestRosterRules = [];
+let _adminRosterViewMode = 'weekly'; // 'weekly' or 'monthly'
+let _adminRosterViewMonth = new Date();
+
+function switchAdminRosterView(mode) {
+    _adminRosterViewMode = mode;
+    const weeklyDiv = document.getElementById('adminWeeklyOverview');
+    const monthlyDiv = document.getElementById('adminMonthlyOverview');
+
+    if (mode === 'weekly') {
+        if (weeklyDiv) weeklyDiv.style.display = 'block';
+        if (monthlyDiv) monthlyDiv.style.display = 'none';
+        renderWeeklyOverview(latestRosterRules || []);
+    } else {
+        if (weeklyDiv) weeklyDiv.style.display = 'none';
+        if (monthlyDiv) monthlyDiv.style.display = 'block';
+        renderAdminMonthlyOverview(latestRosterRules || []);
+    }
+}
+
+function changeAdminRosterMonth(delta) {
+    _adminRosterViewMonth.setMonth(_adminRosterViewMonth.getMonth() + delta);
+    renderAdminMonthlyOverview(latestRosterRules || []);
+}
 
 function loadRosterAdmin() {
     invalidateRosterCache(); // Force fresh read from Firebase
@@ -565,8 +639,105 @@ function loadRosterAdmin() {
         _cachedRosterRules = rules || []; // Update in-memory cache
         latestRosterRules = rules;
         renderRosterList(rules);
-        renderWeeklyOverview(rules);
+
+        // Render based on current mode
+        if (_adminRosterViewMode === 'weekly') {
+            renderWeeklyOverview(rules);
+        } else {
+            renderAdminMonthlyOverview(rules);
+        }
     });
+}
+
+function renderAdminMonthlyOverview(rules) {
+    const container = document.getElementById('adminRosterCalendar');
+    const label = document.getElementById('adminRosterMonthLabel');
+    if (!container) return;
+
+    const viewDate = new Date(_adminRosterViewMonth.getFullYear(), _adminRosterViewMonth.getMonth(), 1);
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    // Update month label
+    if (label) {
+        label.textContent = viewDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    }
+
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0];
+
+    // Calendar math
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    let startDow = firstDay.getDay() - 1;
+    if (startDow < 0) startDow = 6;
+
+    // Build header row
+    const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    let html = '<div class="roster-cal-grid">';
+    dayHeaders.forEach(dh => {
+        html += `<div class="roster-cal-header">${dh}</div>`;
+    });
+
+    // Empty cells before first day
+    for (let e = 0; e < startDow; e++) {
+        html += '<div class="roster-cal-cell roster-cal-empty"></div>';
+    }
+
+    // Day cells
+    for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, month, day);
+        const dateISO = d.toISOString().split('T')[0];
+        const dayIdx = d.getDay();
+        const isToday = dateISO === todayISO;
+        const isPast = d < today && !isToday;
+
+        // Filter rules (Priority: Date > Weekly)
+        const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
+        const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
+        let activeRules = dateRules.length > 0 ? dateRules : (weekRules.length > 0 ? weekRules : []);
+
+        // Fallback default if no rules
+        if (activeRules.length === 0) {
+            let docName = "Dr. Hanim";
+            if (dayIdx === 0) docName = "Dr. Wong";
+            else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
+            activeRules = [{ doc: docName, shift: 'Full Day' }];
+        }
+
+        const todayClass = isToday ? ' roster-cal-today' : '';
+        const pastClass = isPast ? ' roster-cal-past' : '';
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+        html += `<div class="roster-cal-cell${todayClass}${pastClass}">`;
+        html += `<div class="roster-cal-date">${day}<span class="roster-cal-day-name">${dayLabel}</span></div>`;
+
+        activeRules.forEach(r => {
+            const isOff = r.shift === 'Off';
+            const shiftClass = isOff ? 'roster-shift-off' : 'roster-shift-on';
+            const docDisplay = r.doc.replace(/ \(.*\)/, ''); // Shorten
+            const shiftLabel = isOff ? 'OFF' : r.shift;
+            html += `<div class="roster-cal-entry ${shiftClass}">`;
+            html += `<span class="roster-doc-name">${isOff ? '<s>' + docDisplay + '</s>' : docDisplay}</span>`;
+            html += `<span class="roster-shift-label">${shiftLabel}</span>`;
+            html += `</div>`;
+        });
+
+        html += `</div>`;
+    }
+
+    // Empty cells after last day to fill the grid row
+    const totalCells = startDow + daysInMonth;
+    const remainder = totalCells % 7;
+    if (remainder > 0) {
+        for (let e = 0; e < 7 - remainder; e++) {
+            html += '<div class="roster-cal-cell roster-cal-empty"></div>';
+        }
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 function renderWeeklyOverview(rules) {
