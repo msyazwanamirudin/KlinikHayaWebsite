@@ -436,10 +436,10 @@ function renderDoctorList() {
         return;
     }
     // Sort alphabetically for display
-    const sorted = DOCTORS.map((doc, i) => ({ name: doc, idx: i })).sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = DOCTORS.map((doc, i) => ({ name: String(doc || ''), idx: i })).sort((a, b) => a.name.localeCompare(b.name));
     list.innerHTML = sorted.map(item => `
         <div class="d-flex justify-content-between align-items-center border-bottom py-1 px-2">
-            <span class="small">${escapeHTML(item.name)}</span>
+            <span class="small fw-semibold text-dark">${escapeHTML(item.name)}</span>
             <button onclick="removeDoctor(${item.idx})" class="btn btn-outline-danger btn-sm border-0 py-0" title="Remove">
                 <i class="fas fa-times"></i>
             </button>
@@ -622,7 +622,6 @@ function switchAdminTab(tab, event) {
         if (document.getElementById('invSearch')) {
             document.getElementById('invSearch').value = '';
             document.getElementById('invFilterCategory').value = 'All';
-            if (document.getElementById('invExpirySearch')) document.getElementById('invExpirySearch').value = '';
         }
     } else if (tab === 'roster') {
         document.getElementById('tabRoster').style.display = 'block';
@@ -898,34 +897,34 @@ function renderRosterList(rules) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     displayRules.forEach((rule) => {
-        let when = '';
-        let badge = '';
+        let whenLabel = '';
+        let badgeHtml = '';
 
         if (rule.type === 'weekly') {
-            when = `Every < b > ${days[rule.day]}</b > `;
-            badge = `< span class="badge bg-info text-dark" > Weekly</span > `;
+            whenLabel = 'Every ' + days[rule.day];
+            badgeHtml = '<span class="badge bg-info text-dark">Weekly</span>';
         } else {
-            const d = new Date(rule.date);
-            when = `< b > ${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</b > (${days[d.getDay()]})`;
-            badge = `< span class="badge bg-primary" > Date</span > `;
+            const d = new Date(rule.date + 'T00:00:00');
+            whenLabel = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' (' + days[d.getDay()] + ')';
+            badgeHtml = '<span class="badge bg-primary">Date</span>';
         }
 
         html += `
-        < tr >
+        <tr>
             <td class="text-center">
                 <input type="checkbox" class="form-check-input rule-checkbox" 
                     value="${rule._origIdx}" onchange="updateBatchButtons()">
             </td>
             <td>
-                <div>${when}</div>
-                <div class="small text-muted">${badge} &bull; ${rule.shift}</div>
+                <div class="fw-semibold text-dark">${whenLabel}</div>
+                <div class="small text-muted">${badgeHtml} &bull; ${escapeHTML(rule.shift)}</div>
             </td>
-            <td>${rule.doc}</td>
+            <td class="text-dark">${escapeHTML(rule.doc)}</td>
             <td class="text-end">
-                <button onclick="editRosterRule(${rule._origIdx})" class="btn btn-outline-primary btn-sm border-0 me-1" title="Edit/Copy"><i class="fas fa-pen"></i></button>
+                <button onclick="editRosterRule(${rule._origIdx})" class="btn btn-outline-primary btn-sm border-0 me-1" title="Edit"><i class="fas fa-pen"></i></button>
                 <button onclick="deleteRosterRule(${rule._origIdx})" class="btn btn-outline-danger btn-sm border-0" title="Delete"><i class="fas fa-trash"></i></button>
             </td>
-        </tr > `;
+        </tr>`;
     });
 
     list.innerHTML = html;
@@ -973,9 +972,13 @@ function clearAllRules() {
     alert("All rules cleared.");
 }
 
+let _editingRuleIndex = -1; // -1 = adding new, >= 0 = editing existing
+
 function editRosterRule(index) {
     const rule = latestRosterRules[index];
     if (!rule) return;
+
+    _editingRuleIndex = index; // Track which rule we're editing
 
     // Open Form
     const form = document.getElementById('rosterForm');
@@ -988,12 +991,16 @@ function editRosterRule(index) {
     } else {
         document.getElementById('ruleDate').checked = true;
         document.getElementById('rosterDateStart').value = rule.date;
-        document.getElementById('rosterDateEnd').value = ''; // Reset range end for single edit
+        document.getElementById('rosterDateEnd').value = '';
     }
     toggleRuleInputs();
 
     document.getElementById('rosterDocSelect').value = rule.doc;
     document.getElementById('rosterShift').value = rule.shift;
+
+    // Update button text to show editing mode
+    const saveBtn = form.querySelector('button[onclick="addRosterRule()"]');
+    if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Rule';
 
     // Scroll to form
     form.scrollIntoView({ behavior: 'smooth' });
@@ -1003,8 +1010,16 @@ function toggleRosterForm() {
     const form = document.getElementById('rosterForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
     if (form.style.display === 'block') {
+        // Reset to "Add new" mode when opening via Add Rule button
+        _editingRuleIndex = -1;
         document.getElementById('ruleDate').checked = true;
+        document.getElementById('rosterDateStart').value = '';
+        document.getElementById('rosterDateEnd').value = '';
+        document.getElementById('rosterShift').value = 'Full Day';
         toggleRuleInputs();
+        // Reset save button text
+        const saveBtn = form.querySelector('button[onclick="addRosterRule()"]');
+        if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save Rule';
     }
 }
 
@@ -1068,20 +1083,22 @@ function addRosterRule() {
         let conflicts = [];
         let duplicates = [];
 
-        // Check conflicts for ALL new rules
+        // Check conflicts for ALL new rules (skip self when editing)
         newRulesToAdd.forEach(newRule => {
             let existingIndex = -1;
             // STRICT DUPLICATE CHECK: Same Doctor, Same Day, Same Shift
-            // We NO LONGER check for "Different Doctor" as a conflict.
+            // Skip the rule being edited (_editingRuleIndex) to allow updates
             if (newRule.type === 'weekly') {
-                existingIndex = rules.findIndex(r =>
+                existingIndex = rules.findIndex((r, idx) =>
+                    idx !== _editingRuleIndex &&
                     r.type === 'weekly' &&
                     r.day === newRule.day &&
                     r.doc === newRule.doc &&
                     r.shift === newRule.shift
                 );
             } else {
-                existingIndex = rules.findIndex(r =>
+                existingIndex = rules.findIndex((r, idx) =>
+                    idx !== _editingRuleIndex &&
                     r.type === 'date' &&
                     r.date === newRule.date &&
                     r.doc === newRule.doc &&
@@ -1104,22 +1121,26 @@ function addRosterRule() {
         newRulesToAdd.forEach(newRule => {
             if (newRule.type === 'date') {
                 // Check if this doctor already has a weekly rule for this day of week
+                // Skip the rule being edited
                 const dateObj = new Date(newRule.date);
                 const dayOfWeek = dateObj.getDay();
-                const weeklyConflict = rules.find(r =>
+                const weeklyConflict = rules.find((r, idx) =>
+                    idx !== _editingRuleIndex &&
                     r.type === 'weekly' && r.day === dayOfWeek && r.doc === newRule.doc
                 );
                 if (weeklyConflict) {
-                    conflicts.push(`${newRule.doc} already has a recurring ${days[dayOfWeek]} rule.Delete the weekly rule first.`);
+                    conflicts.push(`${newRule.doc} already has a recurring ${days[dayOfWeek]} rule. Delete the weekly rule first.`);
                 }
             } else if (newRule.type === 'weekly') {
                 // Check if this doctor already has date-specific rules on this weekday
-                const dateConflict = rules.find(r => {
+                // Skip the rule being edited
+                const dateConflict = rules.find((r, idx) => {
+                    if (idx === _editingRuleIndex) return false;
                     if (r.type !== 'date' || r.doc !== newRule.doc) return false;
                     return new Date(r.date).getDay() === newRule.day;
                 });
                 if (dateConflict) {
-                    conflicts.push(`${newRule.doc} already has a date - specific rule on a ${days[newRule.day]}. Delete it first.`);
+                    conflicts.push(`${newRule.doc} already has a date-specific rule on a ${days[newRule.day]}. Delete it first.`);
                 }
             }
         });
@@ -1129,12 +1150,21 @@ function addRosterRule() {
             return;
         }
 
-        // Append new rules
-        rules.push(...newRulesToAdd);
+        // If editing, replace the existing rule; otherwise append
+        if (_editingRuleIndex >= 0 && newRulesToAdd.length === 1) {
+            rules[_editingRuleIndex] = newRulesToAdd[0];
+        } else {
+            rules.push(...newRulesToAdd);
+        }
 
         firebaseSave('roster/rules', rules).then(() => {
-            invalidateRosterCache(); // Force cache refresh
-            document.getElementById('rosterForm').style.display = 'none';
+            _editingRuleIndex = -1; // Reset editing mode
+            invalidateRosterCache();
+            const form = document.getElementById('rosterForm');
+            form.style.display = 'none';
+            // Reset save button text
+            const saveBtn = form.querySelector('button[onclick="addRosterRule()"]');
+            if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save Rule';
             loadRosterAdmin();
         });
     });
@@ -1167,7 +1197,7 @@ function populateDoctorSelect() {
 
 // --- INVENTORY MANAGEMENT ---
 let latestInventory = [];
-let _invSortBy = 'expiry'; // default sort: expiry
+let _invSortBy = 'name'; // default sort: name
 
 function setInventorySort(sortBy) {
     _invSortBy = sortBy;
@@ -1196,14 +1226,12 @@ function renderInventory(items, list, empty) {
     // 1. Filter Logic
     const searchTerm = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     const filterCat = document.getElementById('invFilterCategory') ? document.getElementById('invFilterCategory').value : 'All';
-    const filterExpiry = document.getElementById('invExpirySearch') ? document.getElementById('invExpirySearch').value : '';
 
     // Add original index to allow updates on filtered list
     items = items.map((item, index) => ({ ...item, originalIndex: index })).filter(item => {
         const matchName = item.name.toLowerCase().includes(searchTerm);
         const matchCat = filterCat === 'All' || item.category === filterCat;
-        const matchExpiry = !filterExpiry || item.expiry === filterExpiry;
-        return matchName && matchCat && matchExpiry;
+        return matchName && matchCat;
     });
 
     if (items.length === 0) {
@@ -1215,7 +1243,6 @@ function renderInventory(items, list, empty) {
     if (empty) empty.style.display = 'none';
     let html = '';
 
-    // Sort logic based on _invSortBy
     switch (_invSortBy) {
         case 'name':
             items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -1225,6 +1252,9 @@ function renderInventory(items, list, empty) {
             break;
         case 'stock':
             items.sort((a, b) => parseInt(a.qty || 0) - parseInt(b.qty || 0));
+            break;
+        case 'stock-desc':
+            items.sort((a, b) => parseInt(b.qty || 0) - parseInt(a.qty || 0));
             break;
         case 'expiry':
         default:
@@ -1266,7 +1296,7 @@ function renderInventory(items, list, empty) {
         const badgeClass = catColors[item.category] || 'bg-secondary';
 
         html += `
-        < tr class="${statusClass}" >
+        <tr class="${statusClass}">
             <td>
                 <div class="fw-bold text-dark">${escapeHTML(item.name)}</div>
                 <span class="badge ${badgeClass}" style="font-size:0.7rem">${item.category || 'Medicine'}</span>
@@ -1285,7 +1315,7 @@ function renderInventory(items, list, empty) {
             <td class="text-end">
                 <button onclick="deleteInventoryItem(${item.originalIndex})" class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-trash"></i></button>
             </td>
-        </tr > `;
+        </tr>`;
     });
 
     list.innerHTML = html;
@@ -1496,7 +1526,12 @@ function renderPromoPublic() {
             <div class="promo-slide-inner">
                 <img src="${escapeHTML(item.image)}" class="promo-slide-img" alt="Promo ${i + 1}"
                     onerror="this.style.background='linear-gradient(135deg,#ccfbf1,#0f766e)';this.style.minHeight='300px';this.src='';">
-                ${item.text ? `<div class="promo-slide-caption"><p class="mb-0">${escapeHTML(item.text)}</p></div>` : ''}
+                ${item.text ? `<div class="promo-slide-caption">
+                    <div class="promo-caption-inner">
+                        <i class="fas fa-sparkles promo-caption-icon"></i>
+                        <span class="promo-caption-text">${escapeHTML(item.text)}</span>
+                    </div>
+                </div>` : ''}
             </div>
         </div>
     `).join('');

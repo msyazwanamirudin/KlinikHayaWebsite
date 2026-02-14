@@ -1303,9 +1303,10 @@ body.modal-open #chatWindow {
 
 .promo-slide-img {
     width: 100%;
-    height: 400px;
-    object-fit: cover;
+    max-height: 450px;
+    object-fit: contain;
     display: block;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
 }
 
 .promo-slide-caption {
@@ -1313,14 +1314,38 @@ body.modal-open #chatWindow {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    background: linear-gradient(to top, rgba(15, 118, 110, 0.92) 0%, rgba(15, 118, 110, 0.6) 60%, transparent 100%);
     color: white;
-    padding: 30px 20px 15px;
-    font-size: 1rem;
+    padding: 40px 24px 18px;
+}
+
+.promo-caption-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.promo-caption-icon {
+    font-size: 1.1rem;
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+    flex-shrink: 0;
+}
+
+.promo-caption-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1.4;
 }
 
 @media (max-width: 768px) {
     .promo-slide-img {
-        height: 250px;
+        max-height: 300px;
+    }
+
+    .promo-caption-text {
+        font-size: 0.95rem;
     }
 }

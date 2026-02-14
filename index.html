@@ -942,15 +942,13 @@
                                                 <option value="Stationery">Stationery</option>
                                                 <option value="Others">Others</option>
                                             </select>
-                                            <input type="date" id="invExpirySearch" class="form-control form-control-sm"
-                                                style="width:auto;" onchange="filterInventory()"
-                                                title="Filter by expiry date">
                                             <select id="invSortBy" class="form-select form-select-sm"
                                                 style="width:auto;" onchange="setInventorySort(this.value)">
-                                                <option value="expiry">Sort: Expiry</option>
-                                                <option value="name">Sort: Name (A-Z)</option>
+                                                <option value="name" selected>Sort: Name (A-Z)</option>
                                                 <option value="category">Sort: Category</option>
                                                 <option value="stock">Sort: Stock (Low→High)</option>
+                                                <option value="stock-desc">Sort: Stock (High→Low)</option>
+                                                <option value="expiry">Sort: Expiry</option>
                                             </select>
                                         </div>
                                     </div>
