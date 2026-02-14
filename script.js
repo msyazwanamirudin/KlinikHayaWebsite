@@ -354,15 +354,15 @@ function generatePublicRoster() {
     });
 }
 
+
 // --- ADVANCED ADMIN SYSTEM (LocalStorage CMS) ---
-let clickCount = 0;
-let clickTimer = null;
 
 // Security Constants
-// SHA-256 for "8888"
-const ADMIN_HASH_SHA = "2926a2731f4b312c08982cacf8061eb14bf65c1a87cc5d70e864e079c6220731";
+// SHA-256 for "Admin2024!"
+const ADMIN_HASH_SHA = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const ADMIN_EMAIL = "admin@klinikhaya.com";
 const MAX_ATTEMPTS = 3;
-const LOCKOUT_TIME = 100 * 365 * 24 * 60 * 60 * 1000; // 100 Years (Permanent)
+const LOCKOUT_TIME = 100 * 365 * 24 * 60 * 60 * 1000; // Permanent Lockout
 
 // SHA-256 Helper (Async)
 async function sha256(message) {
@@ -398,95 +398,39 @@ document.addEventListener('keydown', blockShortcuts);
 function enableDebugMode() {
     document.removeEventListener('contextmenu', blockContextMenu);
     document.removeEventListener('keydown', blockShortcuts);
-    alert("🔧 Debug Mode Enabled\n\n- Right-Click Unlocked\n- F12 / Inspect Element Unlocked");
-}
-
-// 2b. Emergency Reset Trigger (Hidden in Top Bar Doctor Name AND Footer Status)
-let resetCount = 0;
-let resetTimer = null;
-
-function handleEmergencyReset() {
-    resetCount++;
-    if (resetCount === 1) resetTimer = setTimeout(() => { resetCount = 0; }, 3000);
-    if (resetCount >= 10) {
-        if (confirm("⚠️ Developer Reset: Clear Lockouts & Enable Debug Mode?")) {
-            localStorage.removeItem('adminLockout');
-            localStorage.removeItem('adminAttempts');
-            enableDebugMode();
-            alert("System Reset! Try logging in again.");
-        }
-        resetCount = 0;
-        clearTimeout(resetTimer);
-    }
+    // Alert removed to be less intrusive on login
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 2. Admin Trigger (Hidden in Copyright)
-    const trigger = document.getElementById('adminTrigger');
-    if (trigger) {
-        // Prevent browser text-search on double-click
-        trigger.addEventListener('dblclick', (e) => e.preventDefault());
-        trigger.addEventListener('mousedown', (e) => {
-            if (e.detail > 1) e.preventDefault(); // Prevent text selection on rapid clicks
-        });
-        trigger.addEventListener('click', () => {
-            clickCount++;
-            if (clickCount === 1) clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-            if (clickCount >= 5) {
-                openAdminModal();
-                clickCount = 0;
-                clearTimeout(clickTimer);
-            }
-        });
-    }
-
-    // Attach Emergency Reset to Top Bar + Footer
-    const resetTrigger = document.getElementById('topDoctorDuty');
-    const mobileResetTrigger = document.getElementById('liveStatusText'); // Mobile fallback
-
-    if (resetTrigger) {
-        resetTrigger.style.cursor = 'default';
-        resetTrigger.addEventListener('click', handleEmergencyReset);
-    }
-    if (mobileResetTrigger) {
-        mobileResetTrigger.style.cursor = 'default';
-        mobileResetTrigger.addEventListener('click', handleEmergencyReset);
-    }
-
-    // Also add to Footer Status Text for easier access on mobile
-    const footerStatus = document.getElementById('footerStatusText');
-    if (footerStatus) {
-        footerStatus.addEventListener('click', handleEmergencyReset);
-    }
-
-    // 3. Initialize Logic
+    // 1. Initialize Logic
     populateDoctorSelect();
 
-    // 4. ONE-SHOT Firebase read at page load (free tier optimization)
-    // No persistent listeners for public users — saves concurrent connections
+    // 2. ONE-SHOT Firebase read at page load
     getCachedRoster().then(() => {
-        updateLiveStatus(); // Now uses cached data
+        updateLiveStatus();
     });
 
-    // Add Enter Key for PIN
-    const pinInput = document.getElementById('adminPinInput');
-    if (pinInput) {
-        pinInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') verifyAdminPin();
+    // 3. Add Enter Key for Password
+    const passInput = document.getElementById('adminPasswordInput');
+    if (passInput) {
+        passInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') verifyAdminLogin();
         });
     }
-
-    // --- END OF INITIALIZATION ---
 });
 
 // --- UI MANAGERS ---
 function openAdminModal() {
     document.getElementById('adminModal').style.display = 'flex';
-    document.getElementById('adminPinScreen').style.display = 'block';
+    document.getElementById('adminLoginScreen').style.display = 'block';
     document.getElementById('adminControlScreen').style.display = 'none';
-    document.getElementById('adminPinInput').value = '';
-    document.getElementById('adminPinInput').focus();
-    document.body.classList.add('modal-open'); // Lock Scroll
+
+    // Clear inputs
+    document.getElementById('adminEmailInput').value = '';
+    document.getElementById('adminPasswordInput').value = '';
+    document.getElementById('loginError').style.display = 'none';
+
+    document.body.classList.add('modal-open');
 
     // Hide Public Elements
     const nav = document.getElementById('navbar-main');
@@ -502,7 +446,7 @@ function openAdminModal() {
 
 function closeAdminModal() {
     document.getElementById('adminModal').style.display = 'none';
-    document.body.classList.remove('modal-open'); // Unlock Scroll
+    document.body.classList.remove('modal-open');
 
     // Restore Public Elements
     const nav = document.getElementById('navbar-main');
@@ -514,40 +458,35 @@ function closeAdminModal() {
     if (chatBtn) chatBtn.style.display = '';
 }
 
-function verifyAdminPin() {
-    const errorMsg = document.getElementById('pinError');
-    const input = document.getElementById('adminPinInput').value;
+function verifyAdminLogin() {
+    const errorMsg = document.getElementById('loginError');
+    const email = document.getElementById('adminEmailInput').value.trim();
+    const password = document.getElementById('adminPasswordInput').value;
 
     // Check Lockout
     const lockout = JSON.parse(localStorage.getItem('adminLockout') || '{}');
     if (lockout.active && Date.now() < lockout.until) {
         errorMsg.style.display = 'block';
-        // If lockout is > 24 hours, show permanent message
-        if (lockout.until > Date.now() + 24 * 60 * 60 * 1000) {
-            errorMsg.innerText = "System Locked Permanently";
-        } else {
-            const remaining = Math.ceil((lockout.until - Date.now()) / 60000);
-            errorMsg.innerText = `System Locked. Try again in ${remaining} mins.`;
-        }
+        errorMsg.innerText = "System Locked due to too many failed attempts.";
         return;
     }
 
-    // Verify PIN (SHA-256 Hash)
-    sha256(input).then(hash => {
-        if (hash === ADMIN_HASH_SHA) {
+    // Verify
+    sha256(password).then(hash => {
+        if (email === ADMIN_EMAIL && hash === ADMIN_HASH_SHA) {
             // Success
-            document.getElementById('adminPinScreen').style.display = 'none';
+            document.getElementById('adminLoginScreen').style.display = 'none';
             document.getElementById('adminControlScreen').style.display = 'block';
-            loadInventory(); // Auto-load stock items
-            enableDebugMode(); // UNLOCK INSPECT ELEMENT
+            loadInventory();
+            enableDebugMode();
 
-            // Activate real-time listeners (ADMIN ONLY — saves connections for public users)
+            // Activate Listeners
             firebaseListen('inventory', (data) => {
                 localStorage.setItem('fb_inventory', JSON.stringify(data || []));
             });
             firebaseListen('roster/rules', (data) => {
                 localStorage.setItem('fb_roster_rules', JSON.stringify(data || []));
-                _cachedRosterRules = data || []; // Keep in-memory cache synced
+                _cachedRosterRules = data || [];
                 const rosterModal = document.getElementById('rosterModal');
                 if (rosterModal && rosterModal.style.display === 'flex') {
                     generatePublicRoster();
@@ -565,13 +504,11 @@ function verifyAdminPin() {
             if (attempts >= MAX_ATTEMPTS) {
                 const unlockTime = Date.now() + LOCKOUT_TIME;
                 localStorage.setItem('adminLockout', JSON.stringify({ active: true, until: unlockTime }));
-                errorMsg.innerText = "Too many attempts. System Locked.";
+                errorMsg.innerText = "System Locked.";
             } else {
-                errorMsg.innerText = `Invalid PIN. ${MAX_ATTEMPTS - attempts} attempts remaining.`;
+                errorMsg.innerText = "Invalid Email or Password";
             }
-
             errorMsg.style.display = 'block';
-            document.getElementById('adminPinInput').value = '';
         }
     });
 }
