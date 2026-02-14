@@ -104,8 +104,27 @@ typeWriter();
 function escapeHTML(str) {
     if (!str) return '';
     const div = document.createElement('div');
-    div.textContent = str;
+    div.appendChild(document.createTextNode(str));
     return div.innerHTML;
+}
+
+// --- GLOBAL IN-MEMORY CACHE (Firebase Free Tier Optimization) ---
+// Populated once at page load, reused everywhere. No repeated reads.
+let _cachedRosterRules = null; // null = not yet loaded
+let _cachedInventory = null;
+
+function getCachedRoster() {
+    if (_cachedRosterRules !== null) return Promise.resolve(_cachedRosterRules);
+    // First load: fetch from Firebase once, then cache
+    return firebaseLoad('roster/rules', []).then(rules => {
+        _cachedRosterRules = rules || [];
+        return _cachedRosterRules;
+    });
+}
+
+function invalidateRosterCache() {
+    // Called after admin makes changes — forces next read from Firebase
+    _cachedRosterRules = null;
 }
 
 // --- LIVE STATUS LOGIC (Refined & Synced) ---
@@ -186,9 +205,8 @@ function updateDoctorRoster(isOpen) {
     const day = now.getDay();
     const dateISO = now.toISOString().split('T')[0];
 
-    // Check Firebase rules first, then fall back to hardcoded
-    firebaseLoad('roster/rules', []).then(rules => {
-        // FILTER all matching rules (Priority: Date > Weekly)
+    // Use CACHED roster rules (no Firebase read on every tick)
+    getCachedRoster().then(rules => {
         const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
         const weekRules = rules.filter(r => r.type === 'weekly' && r.day === day);
 
@@ -200,11 +218,9 @@ function updateDoctorRoster(isOpen) {
         let simpleText = "";
 
         if (activeRules.length > 0) {
-            // Join Multiple Doctors
             displayHtml = activeRules.map(r => `<div>${r.doc} <span class="small text-muted">(${r.shift})</span></div>`).join('');
             simpleText = activeRules.map(r => r.doc).join(', ');
         } else {
-            // Default hardcoded schedule
             let doctorName = "";
             if (day === 0) doctorName = "Dr. Wong (Locum)";
             else if (day === 2 || day === 4 || day === 6) doctorName = "Dr. Amin (Specialist)";
@@ -233,10 +249,10 @@ function closeRosterModal() {
 }
 
 function generatePublicRoster() {
-    const list = document.getElementById('publicRosterList');
+    const tbody = document.getElementById('publicRosterList');
 
-    // Load rules from Firebase (async)
-    firebaseLoad('roster/rules', []).then(rules => {
+    // Use CACHED roster rules (no Firebase read)
+    getCachedRoster().then(rules => {
         let html = '';
         const now = new Date();
 
@@ -245,6 +261,7 @@ function generatePublicRoster() {
             d.setDate(now.getDate() + i);
 
             const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+            const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
             const dateISO = d.toISOString().split('T')[0];
             const dayIdx = d.getDay();
 
@@ -256,39 +273,36 @@ function generatePublicRoster() {
             if (dateRules.length > 0) activeRules = dateRules;
             else if (weekRules.length > 0) activeRules = weekRules;
 
-            let docHtml = "";
+            const isToday = i === 0;
+            const rowHighlight = isToday ? ' style="background-color: #f0fdfa; font-weight: 500;"' : '';
+            const todayBadge = isToday ? ' <span class="badge bg-primary" style="font-size:0.65rem;">TODAY</span>' : '';
 
             if (activeRules.length > 0) {
-                // Multiple Doctors
-                docHtml = activeRules.map(r => `
-                    <div class="mb-1">
-                        <div class="fw-bold text-dark">${r.doc}</div>
-                        <div class="small text-muted">${r.shift}</div>
-                    </div>`).join('');
+                activeRules.forEach((r, idx) => {
+                    const isOff = r.shift === 'Off';
+                    const shiftClass = isOff ? 'text-danger fw-bold' : 'text-success';
+                    const shiftLabel = isOff ? '❌ OFF' : r.shift;
+                    html += `<tr${rowHighlight}>
+                        ${idx === 0 ? `<td rowspan="${activeRules.length}" class="align-middle"><div class="fw-bold">${dayStr}</div><div class="small text-muted">${dateStr}</div>${todayBadge}</td>` : ''}
+                        <td>${isOff ? `<span class="text-muted text-decoration-line-through">${r.doc}</span>` : r.doc}</td>
+                        <td><span class="${shiftClass}">${shiftLabel}</span></td>
+                    </tr>`;
+                });
             } else {
                 // Default hardcoded schedule
                 let docName = "Dr. Sara (General)";
                 if (dayIdx === 0) docName = "Dr. Wong (Locum)";
                 else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin (Specialist)";
 
-                docHtml = `
-                    <div class="fw-bold text-dark">${docName}</div>
-                    <div class="small text-muted">Full Day</div>`;
+                html += `<tr${rowHighlight}>
+                    <td><div class="fw-bold">${dayStr}</div><div class="small text-muted">${dateStr}</div>${todayBadge}</td>
+                    <td>${docName}</td>
+                    <td><span class="text-success">Full Day</span></td>
+                </tr>`;
             }
-
-            html += `
-            <li class="list-group-item">
-                <div class="roster-date text-center lh-1">
-                    <div class="small text-muted text-uppercase">${dayStr}</div>
-                    <div class="h5 mb-0">${d.getDate()}</div>
-                </div>
-                <div class="roster-info d-flex flex-column align-items-end text-end" style="width: 100%;">
-                    ${docHtml}
-                </div>
-            </li>`;
         }
 
-        if (list) list.innerHTML = html;
+        if (tbody) tbody.innerHTML = html;
     });
 }
 
@@ -399,22 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Initialize Logic
     populateDoctorSelect();
-    updateLiveStatus();
 
-    // 4. Firebase Real-Time Listeners (auto-refresh when data changes)
-    firebaseListen('inventory', (data) => {
-        // Update local cache silently
-        localStorage.setItem('fb_inventory', JSON.stringify(data || []));
-    });
-    firebaseListen('roster/rules', (data) => {
-        localStorage.setItem('fb_roster_rules', JSON.stringify(data || []));
-        // Refresh public roster if modal is open
-        const rosterModal = document.getElementById('rosterModal');
-        if (rosterModal && rosterModal.style.display === 'flex') {
-            generatePublicRoster();
-        }
-        // Refresh today's doctor
-        updateLiveStatus();
+    // 4. ONE-SHOT Firebase read at page load (free tier optimization)
+    // No persistent listeners for public users — saves concurrent connections
+    getCachedRoster().then(() => {
+        updateLiveStatus(); // Now uses cached data
     });
 
     // Add Enter Key for PIN
@@ -490,6 +493,19 @@ function verifyAdminPin() {
             loadInventory(); // Auto-load stock items
             enableDebugMode(); // UNLOCK INSPECT ELEMENT
 
+            // Activate real-time listeners (ADMIN ONLY — saves connections for public users)
+            firebaseListen('inventory', (data) => {
+                localStorage.setItem('fb_inventory', JSON.stringify(data || []));
+            });
+            firebaseListen('roster/rules', (data) => {
+                localStorage.setItem('fb_roster_rules', JSON.stringify(data || []));
+                _cachedRosterRules = data || []; // Keep in-memory cache synced
+                const rosterModal = document.getElementById('rosterModal');
+                if (rosterModal && rosterModal.style.display === 'flex') {
+                    generatePublicRoster();
+                }
+            });
+
             // Reset Attempts
             localStorage.removeItem('adminLockout');
             localStorage.removeItem('adminAttempts');
@@ -544,10 +560,93 @@ function switchAdminTab(tab, event) {
 let latestRosterRules = []; // Store for access by index
 
 function loadRosterAdmin() {
+    invalidateRosterCache(); // Force fresh read from Firebase
     firebaseLoad('roster/rules', []).then(rules => {
-        latestRosterRules = rules; // Update global cache
+        _cachedRosterRules = rules || []; // Update in-memory cache
+        latestRosterRules = rules;
         renderRosterList(rules);
+        renderWeeklyOverview(rules);
     });
+}
+
+function renderWeeklyOverview(rules) {
+    const container = document.getElementById('adminWeeklyOverview');
+    if (!container) return;
+
+    const now = new Date();
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    let html = `<div class="border rounded shadow-sm overflow-hidden">
+        <div class="bg-primary text-white px-3 py-2 d-flex align-items-center gap-2">
+            <i class="fas fa-calendar-week"></i>
+            <span class="fw-bold small text-uppercase">Weekly Overview</span>
+        </div>
+        <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0 align-middle roster-week-table" style="font-size: 0.8rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-center" style="width: 14.28%;">Mon</th>
+                    <th class="text-center" style="width: 14.28%;">Tue</th>
+                    <th class="text-center" style="width: 14.28%;">Wed</th>
+                    <th class="text-center" style="width: 14.28%;">Thu</th>
+                    <th class="text-center" style="width: 14.28%;">Fri</th>
+                    <th class="text-center" style="width: 14.28%;">Sat</th>
+                    <th class="text-center" style="width: 14.28%;">Sun</th>
+                </tr>
+            </thead>
+            <tbody><tr>`;
+
+    // Build 7 columns (Mon=1 to Sun=0)
+    const weekOrder = [1, 2, 3, 4, 5, 6, 0]; // Mon to Sun
+    weekOrder.forEach(dayIdx => {
+        // Find the next occurrence of this day
+        const d = new Date(now);
+        const today = d.getDay();
+        let daysAhead = dayIdx - today;
+        if (daysAhead < 0) daysAhead += 7;
+        d.setDate(d.getDate() + daysAhead);
+        const dateISO = d.toISOString().split('T')[0];
+        const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+        // Filter Rules (Priority: Date > Weekly)
+        const dateRules = rules.filter(r => r.type === 'date' && r.date === dateISO);
+        const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
+
+        let activeRules = [];
+        if (dateRules.length > 0) activeRules = dateRules;
+        else if (weekRules.length > 0) activeRules = weekRules;
+
+        const isToday = daysAhead === 0;
+        const cellHighlight = isToday ? 'background-color: #f0fdfa; border-left: 3px solid #0d9488;' : '';
+
+        let cellContent = `<div class="text-muted small mb-1">${dateStr}</div>`;
+
+        if (activeRules.length > 0) {
+            activeRules.forEach(r => {
+                const isOff = r.shift === 'Off';
+                if (isOff) {
+                    cellContent += `<div class="text-danger small">❌ OFF</div>`;
+                } else {
+                    cellContent += `<div class="mb-1">
+                        <div class="fw-bold small">${r.doc.split(' ')[0]} ${r.doc.split(' ')[1] || ''}</div>
+                        <div style="font-size:0.7rem;" class="text-muted">${r.shift}</div>
+                    </div>`;
+                }
+            });
+        } else {
+            // Default
+            let docName = "Dr. Sara";
+            if (dayIdx === 0) docName = "Dr. Wong";
+            else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
+            cellContent += `<div class="fw-bold small text-muted">${docName}</div>
+                <div style="font-size:0.7rem;" class="text-muted">Full Day</div>`;
+        }
+
+        html += `<td class="text-center p-2" style="${cellHighlight}">${cellContent}</td>`;
+    });
+
+    html += `</tr></tbody></table></div></div>`;
+    container.innerHTML = html;
 }
 
 function renderRosterList(rules) {
@@ -643,6 +742,7 @@ function deleteSelectedRules() {
             if (idx >= 0 && idx < rules.length) rules.splice(idx, 1);
         });
         firebaseSave('roster/rules', rules);
+        invalidateRosterCache();
         loadRosterAdmin();
         alert("Selected rules deleted.");
     });
@@ -653,6 +753,7 @@ function clearAllRules() {
     if (!confirm("🔴 DOUBLE CHECK: This actions cannot be undone. Confirm clear all?")) return;
 
     firebaseSave('roster/rules', []); // Save empty array
+    invalidateRosterCache();
     loadRosterAdmin();
     alert("All rules cleared.");
 }
@@ -783,17 +884,41 @@ function addRosterRule() {
             return;
         }
 
-        // Apply Changes:
-        // We do NOT filter out old rules anymore, unless checking for exact duplicates?
-        // Actually, we don't need to filter anything if we allow multiple.
-        // But if we found a duplicate, we returned above.
-        // So here, we just APPEND.
+        // CROSS-TYPE CONFLICT: Same Doctor on overlapping Date vs Weekly
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        newRulesToAdd.forEach(newRule => {
+            if (newRule.type === 'date') {
+                // Check if this doctor already has a weekly rule for this day of week
+                const dateObj = new Date(newRule.date);
+                const dayOfWeek = dateObj.getDay();
+                const weeklyConflict = rules.find(r =>
+                    r.type === 'weekly' && r.day === dayOfWeek && r.doc === newRule.doc
+                );
+                if (weeklyConflict) {
+                    conflicts.push(`${newRule.doc} already has a recurring ${days[dayOfWeek]} rule. Delete the weekly rule first.`);
+                }
+            } else if (newRule.type === 'weekly') {
+                // Check if this doctor already has date-specific rules on this weekday
+                const dateConflict = rules.find(r => {
+                    if (r.type !== 'date' || r.doc !== newRule.doc) return false;
+                    return new Date(r.date).getDay() === newRule.day;
+                });
+                if (dateConflict) {
+                    conflicts.push(`${newRule.doc} already has a date-specific rule on a ${days[newRule.day]}. Delete it first.`);
+                }
+            }
+        });
 
-        // 2. Add all new rules
+        if (conflicts.length > 0) {
+            alert(`Error: Schedule conflict detected:\n` + conflicts.slice(0, 3).join('\n') + (conflicts.length > 3 ? '\n...' : ''));
+            return;
+        }
+
+        // Append new rules
         rules.push(...newRulesToAdd);
 
         firebaseSave('roster/rules', rules).then(() => {
-            // Close form if it was open
+            invalidateRosterCache(); // Force cache refresh
             document.getElementById('rosterForm').style.display = 'none';
             loadRosterAdmin();
         });
@@ -805,7 +930,10 @@ function deleteRosterRule(index) {
     firebaseLoad('roster/rules', []).then(rules => {
         if (index >= 0 && index < rules.length) {
             rules.splice(index, 1);
-            firebaseSave('roster/rules', rules).then(() => loadRosterAdmin());
+            firebaseSave('roster/rules', rules).then(() => {
+                invalidateRosterCache();
+                loadRosterAdmin();
+            });
         }
     });
 }
@@ -1054,7 +1182,8 @@ function calculateDueDate() {
 
 
 
-setInterval(updateLiveStatus, 60000);
+// Throttled: 5 min interval (clinic status only changes at 9AM/12PM/2PM/10PM)
+setInterval(updateLiveStatus, 300000);
 
 // --- HIDE STATUS BAR ON FOOTER SCROLL (runs on load) ---
 (function () {

@@ -1071,3 +1071,36 @@ body.modal-open .chat-widget-btn,
 body.modal-open #chatWindow {
     display: none !important;
 }
+
+/* --- Weekly Roster Table Styles --- */
+.roster-week-table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #f0fdfa;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding: 8px 6px;
+}
+
+.roster-week-table td {
+    vertical-align: top;
+    padding: 8px 6px;
+    min-height: 60px;
+}
+
+.roster-week-table tr:hover td {
+    background-color: #f0fdfa;
+}
+
+/* Responsive: on small screens, allow horizontal scroll */
+@media (max-width: 576px) {
+    .roster-week-table {
+        font-size: 0.75rem !important;
+    }
+
+    .roster-week-table th,
+    .roster-week-table td {
+        padding: 4px 3px;
+    }
+}
