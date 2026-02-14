@@ -430,6 +430,19 @@ function openAdminModal() {
     document.getElementById('adminPasswordInput').value = '';
     document.getElementById('loginError').style.display = 'none';
 
+    // Developer Backdoor: Double click prompt to reset lockout
+    const title = document.querySelector('#adminLoginScreen p');
+    if (title) {
+        title.ondblclick = () => {
+            if (confirm("Reset Security Lockout?")) {
+                localStorage.removeItem('adminLockout');
+                localStorage.removeItem('adminAttempts');
+                alert("Lockout Reset.");
+                document.getElementById('loginError').style.display = 'none';
+            }
+        };
+    }
+
     document.body.classList.add('modal-open');
 
     // Hide Public Elements
