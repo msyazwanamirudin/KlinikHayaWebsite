@@ -221,13 +221,8 @@ function updateDoctorRoster(isOpen) {
             displayHtml = activeRules.map(r => `<div>${r.doc} <span class="small text-muted">(${r.shift})</span></div>`).join('');
             simpleText = activeRules.map(r => r.doc).join(', ');
         } else {
-            let doctorName = "";
-            if (day === 0) doctorName = "Dr. Wong (Locum)";
-            else if (day === 2 || day === 4 || day === 6) doctorName = "Dr. Amin (Specialist)";
-            else doctorName = "Dr. Sara (General)";
-
-            displayHtml = `<span class="fw-bold">${doctorName}</span>`;
-            simpleText = doctorName;
+            displayHtml = `<span class="text-muted fst-italic">No doctor on duty</span>`;
+            simpleText = "No doctor on duty";
         }
 
         if (docText) docText.innerHTML = displayHtml;
@@ -311,13 +306,8 @@ function generatePublicRoster() {
             const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
             let activeRules = dateRules.length > 0 ? dateRules : (weekRules.length > 0 ? weekRules : []);
 
-            // Fallback default if no rules
-            if (activeRules.length === 0) {
-                let docName = "Dr. Hanim";
-                if (dayIdx === 0) docName = "Dr. Wong";
-                else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
-                activeRules = [{ doc: docName, shift: 'Full Day' }];
-            }
+            // No fallback — default is empty (no doctor on duty)
+            // activeRules stays empty if no rules set
 
             const todayClass = isToday ? ' roster-cal-today' : '';
             const pastClass = isPast ? ' roster-cal-past' : '';
@@ -359,7 +349,7 @@ function generatePublicRoster() {
 
 // Security Constants
 // SHA-256 for "Admin2024!"
-const ADMIN_HASH_SHA = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const ADMIN_HASH_SHA = "5a55c7873ed7338f35d782adb513d336a36086ddec0fa4b6444fda6d440387c2";
 const ADMIN_EMAIL = "admin@klinikhaya.com";
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME = 100 * 365 * 24 * 60 * 60 * 1000; // Permanent Lockout
@@ -372,14 +362,74 @@ async function sha256(message) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Data: Registered Doctors
-const DOCTORS = [
+// Data: Registered Doctors (dynamic, stored in Firebase)
+const DEFAULT_DOCTORS = [
     "Dr. Alia Syamim (Fertility)",
     "Dr. Sarah Lee (Pediatric)",
     "Dr. Hanim (General)",
     "Dr. Wong (Locum)",
     "Dr. Amin (Specialist)"
 ];
+let DOCTORS = [...DEFAULT_DOCTORS];
+
+// Utility: Escape HTML to prevent XSS
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function loadDoctors() {
+    return firebaseLoad('doctors', null).then(docs => {
+        if (docs && Array.isArray(docs) && docs.length > 0) {
+            DOCTORS = docs;
+        } else {
+            DOCTORS = [...DEFAULT_DOCTORS];
+        }
+        populateDoctorSelect();
+        renderDoctorList();
+        return DOCTORS;
+    });
+}
+
+function addDoctor() {
+    const input = document.getElementById('newDoctorName');
+    if (!input) return;
+    const name = input.value.trim();
+    if (!name) return alert('Please enter a doctor name');
+    if (DOCTORS.includes(name)) return alert('Doctor already exists');
+    DOCTORS.push(name);
+    firebaseSave('doctors', DOCTORS).then(() => {
+        input.value = '';
+        populateDoctorSelect();
+        renderDoctorList();
+    });
+}
+
+function removeDoctor(index) {
+    if (!confirm(`Remove ${DOCTORS[index]}?`)) return;
+    DOCTORS.splice(index, 1);
+    firebaseSave('doctors', DOCTORS).then(() => {
+        populateDoctorSelect();
+        renderDoctorList();
+    });
+}
+
+function renderDoctorList() {
+    const list = document.getElementById('doctorManageList');
+    if (!list) return;
+    if (DOCTORS.length === 0) {
+        list.innerHTML = '<div class="text-muted small text-center p-2">No doctors registered</div>';
+        return;
+    }
+    list.innerHTML = DOCTORS.map((doc, i) => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-1 px-2">
+            <span class="small">${escapeHTML(doc)}</span>
+            <button onclick="removeDoctor(${i})" class="btn btn-outline-danger btn-sm border-0 py-0" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
 
 // 1. Security: Disable Right Click & Inspect Shortcuts
 function blockContextMenu(event) { event.preventDefault(); }
@@ -402,13 +452,16 @@ function enableDebugMode() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Logic
-    populateDoctorSelect();
+    // 1. Initialize Logic — Load doctors from Firebase first
+    loadDoctors();
 
     // 2. ONE-SHOT Firebase read at page load
     getCachedRoster().then(() => {
         updateLiveStatus();
     });
+
+    // 3. Load promo section on public page
+    loadPromoPublic();
 
     // 3. Add Enter Key for Password
     const passInput = document.getElementById('adminPasswordInput');
@@ -495,6 +548,7 @@ function verifyAdminLogin() {
             document.getElementById('adminLoginScreen').style.display = 'none';
             document.getElementById('adminControlScreen').style.display = 'block';
             loadInventory();
+            loadDoctors();
             enableDebugMode();
 
             // Activate Listeners
@@ -544,11 +598,15 @@ function switchAdminTab(tab, event) {
         if (document.getElementById('invSearch')) {
             document.getElementById('invSearch').value = '';
             document.getElementById('invFilterCategory').value = 'All';
+            if (document.getElementById('invExpirySearch')) document.getElementById('invExpirySearch').value = '';
         }
     } else if (tab === 'roster') {
         document.getElementById('tabRoster').style.display = 'block';
         loadRosterAdmin();
-        populateDoctorSelect();
+        loadDoctors();
+    } else if (tab === 'promo') {
+        document.getElementById('tabPromo').style.display = 'block';
+        loadPromoAdmin();
     }
 
     if (event && event.currentTarget) {
@@ -664,13 +722,8 @@ function renderAdminMonthlyOverview(rules) {
         const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
         let activeRules = dateRules.length > 0 ? dateRules : (weekRules.length > 0 ? weekRules : []);
 
-        // Fallback default if no rules
-        if (activeRules.length === 0) {
-            let docName = "Dr. Hanim";
-            if (dayIdx === 0) docName = "Dr. Wong";
-            else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
-            activeRules = [{ doc: docName, shift: 'Full Day' }];
-        }
+        // No fallback — default is empty (no doctor on duty)
+        // activeRules stays empty if no rules set
 
         const todayClass = isToday ? ' roster-cal-today' : '';
         const pastClass = isPast ? ' roster-cal-past' : '';
@@ -765,13 +818,8 @@ function renderWeeklyOverview(rules) {
         const weekRules = rules.filter(r => r.type === 'weekly' && r.day === dayIdx);
         let activeRules = dateRules.length > 0 ? dateRules : (weekRules.length > 0 ? weekRules : []);
 
-        // Default
-        if (activeRules.length === 0) {
-            let docName = "Dr. Hanim";
-            if (dayIdx === 0) docName = "Dr. Wong";
-            else if (dayIdx === 2 || dayIdx === 4 || dayIdx === 6) docName = "Dr. Amin";
-            activeRules = [{ doc: docName, shift: 'Full Day' }];
-        }
+        // No fallback — default is empty (no doctor on duty)
+        // activeRules stays empty if no rules set
 
         let cellContent = `<div class="fw-bold mb-1 text-secondary" style="font-size:0.7rem;">${d.getDate()}/${d.getMonth() + 1}</div>`;
 
@@ -1115,12 +1163,14 @@ function renderInventory(items, list, empty) {
     // 1. Filter Logic
     const searchTerm = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     const filterCat = document.getElementById('invFilterCategory') ? document.getElementById('invFilterCategory').value : 'All';
+    const filterExpiry = document.getElementById('invExpirySearch') ? document.getElementById('invExpirySearch').value : '';
 
     // Add original index to allow updates on filtered list
     items = items.map((item, index) => ({ ...item, originalIndex: index })).filter(item => {
         const matchName = item.name.toLowerCase().includes(searchTerm);
         const matchCat = filterCat === 'All' || item.category === filterCat;
-        return matchName && matchCat;
+        const matchExpiry = !filterExpiry || item.expiry === filterExpiry;
+        return matchName && matchCat && matchExpiry;
     });
 
     if (items.length === 0) {
@@ -1153,7 +1203,9 @@ function renderInventory(items, list, empty) {
                 statusBadge = '<span class="badge bg-danger ms-1">EXPIRED</span>';
             } else if (daysLeft < 60) {
                 statusClass = 'table-warning';
-                statusBadge = `< span class="badge bg-warning text-dark ms-1" > Exp: ${item.expiry}</span > `;
+                statusBadge = `<span class="badge bg-warning text-dark ms-1">Exp: ${item.expiry}</span>`;
+            } else {
+                statusBadge = `<span class="badge bg-secondary ms-1" style="font-size:0.65rem">Exp: ${item.expiry}</span>`;
             }
         }
 
@@ -1235,6 +1287,7 @@ function addInventoryItem() {
             // Reset Form
             document.getElementById('invName').value = '';
             document.getElementById('invQty').value = '';
+            document.getElementById('invExpiry').value = '';
             toggleInventoryForm();
             loadInventory();
         });
@@ -1250,6 +1303,148 @@ function deleteInventoryItem(index) {
 }
 
 
+// --- PROMO MANAGEMENT SYSTEM ---
+let promoData = { enabled: false, items: [] };
+
+function loadPromoAdmin() {
+    firebaseLoad('promo', { enabled: false, items: [] }).then(data => {
+        promoData = data || { enabled: false, items: [] };
+        if (!promoData.items) promoData.items = [];
+        renderPromoAdmin();
+    });
+}
+
+function loadPromoPublic() {
+    firebaseLoad('promo', { enabled: false, items: [] }).then(data => {
+        promoData = data || { enabled: false, items: [] };
+        if (!promoData.items) promoData.items = [];
+        renderPromoPublic();
+    });
+}
+
+function togglePromoSection() {
+    const toggle = document.getElementById('promoToggle');
+    promoData.enabled = toggle.checked;
+    firebaseSave('promo', promoData).then(() => {
+        renderPromoPublic();
+    });
+}
+
+function previewPromoImage() {
+    const url = document.getElementById('promoImageUrl').value.trim();
+    const preview = document.getElementById('promoImagePreview');
+    if (!url) {
+        preview.innerHTML = '<span class="text-muted small">Enter a URL above to preview</span>';
+        return;
+    }
+    preview.innerHTML = '<span class="text-primary small"><i class="fas fa-spinner fa-spin me-1"></i>Loading...</span>';
+    const img = new Image();
+    img.onload = () => {
+        preview.innerHTML = `
+            <img src="${escapeHTML(url)}" class="img-fluid rounded" style="max-height:150px;" alt="Preview">
+            <div class="text-success small mt-1"><i class="fas fa-check-circle me-1"></i>Image loaded successfully</div>
+        `;
+    };
+    img.onerror = () => {
+        preview.innerHTML = `
+            <div class="text-danger small"><i class="fas fa-times-circle me-1"></i>Failed to load image. Check the URL.</div>
+        `;
+    };
+    img.src = url;
+}
+
+function addPromoItem() {
+    const imageUrl = document.getElementById('promoImageUrl').value.trim();
+    const text = document.getElementById('promoText').value.trim();
+    if (!imageUrl) return alert('Image URL is required');
+
+    promoData.items.push({ image: imageUrl, text: text });
+    firebaseSave('promo', promoData).then(() => {
+        document.getElementById('promoImageUrl').value = '';
+        document.getElementById('promoText').value = '';
+        document.getElementById('promoImagePreview').innerHTML = '<span class="text-muted small">Enter a URL above to preview</span>';
+        renderPromoAdmin();
+        renderPromoPublic();
+    });
+}
+
+function deletePromoItem(index) {
+    if (!confirm('Remove this promo item?')) return;
+    promoData.items.splice(index, 1);
+    firebaseSave('promo', promoData).then(() => {
+        renderPromoAdmin();
+        renderPromoPublic();
+    });
+}
+
+function renderPromoAdmin() {
+    const list = document.getElementById('promoItemList');
+    const toggle = document.getElementById('promoToggle');
+    if (!list) return;
+
+    if (toggle) toggle.checked = promoData.enabled;
+
+    if (promoData.items.length === 0) {
+        list.innerHTML = '<div class="text-center text-muted p-3"><i class="fas fa-images fs-3 mb-2 d-block text-secondary"></i>No promo items added yet</div>';
+        return;
+    }
+
+    list.innerHTML = promoData.items.map((item, i) => `
+        <div class="d-flex gap-2 align-items-start border-bottom py-2">
+            <img src="${escapeHTML(item.image)}" class="rounded" style="width:60px;height:60px;object-fit:cover;"
+                onerror="this.style.background='#f0f0f0';this.src='';this.alt='Failed'" alt="Promo">
+            <div class="flex-grow-1">
+                <div class="small fw-bold text-truncate" style="max-width:200px;">${escapeHTML(item.text) || '<em class="text-muted">No caption</em>'}</div>
+                <div class="text-muted" style="font-size:0.7rem;word-break:break-all;">${escapeHTML(item.image).substring(0, 50)}...</div>
+            </div>
+            <button onclick="deletePromoItem(${i})" class="btn btn-outline-danger btn-sm border-0"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function renderPromoPublic() {
+    const container = document.getElementById('promoPublicSection');
+    if (!container) return;
+
+    if (!promoData.enabled || !promoData.items || promoData.items.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    let slidesHtml = promoData.items.map((item, i) => `
+        <div class="carousel-item ${i === 0 ? 'active' : ''}">
+            <div class="promo-slide-inner">
+                <img src="${escapeHTML(item.image)}" class="promo-slide-img" alt="Promo ${i + 1}"
+                    onerror="this.style.background='linear-gradient(135deg,#ccfbf1,#0f766e)';this.style.minHeight='300px';this.src='';">
+                ${item.text ? `<div class="promo-slide-caption"><p class="mb-0">${escapeHTML(item.text)}</p></div>` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="container py-4">
+            <div class="text-center mb-3">
+                <span class="text-primary fw-bold letter-spacing-2 text-uppercase small">Special Offers</span>
+                <h3 class="fw-bold mt-1">Promotions</h3>
+            </div>
+            <div id="promoCarousel" class="carousel slide rounded-4 overflow-hidden shadow" data-bs-ride="carousel" data-bs-interval="4000">
+                <div class="carousel-inner">${slidesHtml}</div>
+                ${promoData.items.length > 1 ? `
+                    <button class="carousel-control-prev" type="button" data-bs-target="#promoCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#promoCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                    <div class="carousel-indicators">
+                        ${promoData.items.map((_, i) => `<button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="${i}" class="${i === 0 ? 'active' : ''}" style="width:8px;height:8px;border-radius:50%;"></button>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
 
 // --- PUBLIC HEALTH TOOLS ---
 function calculateBMI() {

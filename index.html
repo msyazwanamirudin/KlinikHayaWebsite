@@ -177,6 +177,9 @@
         </div>
     </div>
 
+    <!-- Public Promo Section (dynamically rendered by JS) -->
+    <section id="promoPublicSection" style="display: none;"></section>
+
     <!-- Services Grid -->
     <section id="services" class="py-5 position-relative">
         <div class="container py-5">
@@ -489,6 +492,86 @@
     </section>
 
     <!-- FAQ Section -->
+    <!-- Google Reviews Section -->
+    <section class="py-5 bg-light" id="reviews">
+        <div class="container py-3">
+            <div class="row mb-4 justify-content-center text-center">
+                <div class="col-lg-7">
+                    <span class="text-primary fw-bold letter-spacing-2 text-uppercase">Testimonials</span>
+                    <h2 class="display-6 fw-bold mt-2">What Our Patients Say</h2>
+                    <p class="text-muted">Hear from our satisfied patients about their experience at Klinik Haya.</p>
+                </div>
+            </div>
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-4" data-aos="fade-up">
+                    <div class="review-card p-4 h-100 bg-white rounded-4 shadow-sm position-relative">
+                        <div class="review-stars mb-2">
+                            <i class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-3">&ldquo;The clinic is very clean and the staff are incredibly
+                            friendly. Dr. Alia took the time to explain everything about my fertility treatment. Highly
+                            recommended!&rdquo;</p>
+                        <div class="d-flex align-items-center">
+                            <div class="review-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                style="width:36px;height:36px;font-size:0.85rem;">NA</div>
+                            <div>
+                                <div class="fw-bold small">Nurul Aisyah</div>
+                                <div class="text-muted" style="font-size:0.75rem;">2 weeks ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="review-card p-4 h-100 bg-white rounded-4 shadow-sm position-relative">
+                        <div class="review-stars mb-2">
+                            <i class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-3">&ldquo;Very professional and affordable. The health screening package
+                            was comprehensive. I bring my whole family here now. Best klinik in Selangor!&rdquo;</p>
+                        <div class="d-flex align-items-center">
+                            <div class="review-avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                style="width:36px;height:36px;font-size:0.85rem;">AM</div>
+                            <div>
+                                <div class="fw-bold small">Ahmad Mustafa</div>
+                                <div class="text-muted" style="font-size:0.75rem;">1 month ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="review-card p-4 h-100 bg-white rounded-4 shadow-sm position-relative">
+                        <div class="review-stars mb-2">
+                            <i class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star text-warning"></i><i class="fas fa-star text-warning"></i><i
+                                class="fas fa-star-half-alt text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-3">&ldquo;Came for a regular check-up and was impressed by how modern
+                            the facility is. Short waiting time and the doctor was very thorough. Will come back!&rdquo;
+                        </p>
+                        <div class="d-flex align-items-center">
+                            <div class="review-avatar bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                style="width:36px;height:36px;font-size:0.85rem;">SL</div>
+                            <div>
+                                <div class="fw-bold small">Sarah Lim</div>
+                                <div class="text-muted" style="font-size:0.75rem;">3 weeks ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="https://g.page/r/klinikhaya/review" target="_blank"
+                    class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="fab fa-google me-2"></i>See All Reviews on Google
+                </a>
+            </div>
+        </div>
+    </section>
+
     <section class="py-5 bg-white" id="faq">
         <div class="container py-5">
             <div class="text-center mb-5">
@@ -809,6 +892,10 @@
                                         <button class="nav-link btn-sm" onclick="switchAdminTab('roster', event)">📅
                                             Doctor Roster</button>
                                     </li>
+                                    <li class="nav-item">
+                                        <button class="nav-link btn-sm" onclick="switchAdminTab('promo', event)">🎉
+                                            Promo</button>
+                                    </li>
                                 </ul>
 
                                 <!-- Tab: Inventory Management -->
@@ -823,9 +910,10 @@
                                         </div>
 
                                         <!-- Search & Filter -->
-                                        <div class="d-flex gap-2">
+                                        <div class="d-flex gap-2 flex-wrap">
                                             <input type="text" id="invSearch" class="form-control form-control-sm"
-                                                placeholder="Search item..." onkeyup="filterInventory()">
+                                                placeholder="Search item..." onkeyup="filterInventory()"
+                                                style="min-width:120px;flex:1;">
                                             <select id="invFilterCategory" class="form-select form-select-sm"
                                                 style="width: auto;" onchange="filterInventory()">
                                                 <option value="All">All Categories</option>
@@ -835,6 +923,9 @@
                                                 <option value="Stationery">Stationery</option>
                                                 <option value="Others">Others</option>
                                             </select>
+                                            <input type="date" id="invExpirySearch" class="form-control form-control-sm"
+                                                style="width:auto;" onchange="filterInventory()"
+                                                title="Filter by expiry date">
                                         </div>
                                     </div>
 
@@ -1051,6 +1142,55 @@
                                             No custom rules set.<br>Using default schedule.
                                         </div>
                                     </div>
+                                    <!-- Manage Doctors -->
+                                    <div class="bg-light p-3 rounded border mt-3">
+                                        <h6 class="fw-bold mb-2 small text-uppercase text-primary"><i
+                                                class="fas fa-user-md me-1"></i>Manage Doctors</h6>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <input type="text" id="newDoctorName" class="form-control form-control-sm"
+                                                placeholder="e.g. Dr. Ahmad (Surgeon)">
+                                            <button onclick="addDoctor()" class="btn btn-success btn-sm text-nowrap"><i
+                                                    class="fas fa-plus me-1"></i>Add</button>
+                                        </div>
+                                        <div id="doctorManageList" class="border rounded bg-white"
+                                            style="max-height:200px;overflow-y:auto;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab: Promo Management -->
+                                <div id="tabPromo" class="admin-tab-pane" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="text-primary fw-bold small text-uppercase mb-0">Promo Section</h6>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="promoToggle"
+                                                onchange="togglePromoSection()">
+                                            <label class="form-check-label small" for="promoToggle">Show on Site</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Add Promo Item Form -->
+                                    <div class="bg-light p-3 rounded mb-3 border shadow-sm">
+                                        <h6 class="fw-bold mb-2 small">Add Promo Item</h6>
+                                        <div class="mb-2">
+                                            <input type="text" id="promoImageUrl" class="form-control form-control-sm"
+                                                placeholder="Image URL (e.g. https://...)"
+                                                oninput="previewPromoImage()">
+                                        </div>
+                                        <div id="promoImagePreview" class="mb-2 text-center p-2 border rounded bg-white"
+                                            style="min-height:60px;">
+                                            <span class="text-muted small">Enter a URL above to preview</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <input type="text" id="promoText" class="form-control form-control-sm"
+                                                placeholder="Caption / Description (optional)">
+                                        </div>
+                                        <button onclick="addPromoItem()" class="btn btn-success btn-sm w-100"><i
+                                                class="fas fa-plus me-1"></i>Add Promo</button>
+                                    </div>
+
+                                    <!-- Promo Item List -->
+                                    <div id="promoItemList" class="border rounded bg-white p-2"
+                                        style="max-height:40vh;overflow-y:auto;"></div>
                                 </div>
                             </div>
                         </div>
