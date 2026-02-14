@@ -473,7 +473,7 @@ function verifyAdminPin() {
         errorMsg.style.display = 'block';
         // If lockout is > 24 hours, show permanent message
         if (lockout.until > Date.now() + 24 * 60 * 60 * 1000) {
-            errorMsg.innerText = "System Locked. Perform Emergency Reset.";
+            errorMsg.innerText = "System Locked Permanently";
         } else {
             const remaining = Math.ceil((lockout.until - Date.now()) / 60000);
             errorMsg.innerText = `System Locked. Try again in ${remaining} mins.`;
