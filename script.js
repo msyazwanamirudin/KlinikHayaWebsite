@@ -420,11 +420,22 @@ function addDoctor() {
 }
 
 function removeDoctor(index) {
-    if (!confirm(`Remove ${DOCTORS[index]}?`)) return;
+    const docName = DOCTORS[index];
+    if (!confirm(`Remove ${docName}?\n\nAll roster rules for this doctor will also be deleted.`)) return;
     DOCTORS.splice(index, 1);
     firebaseSave('doctors', DOCTORS).then(() => {
         populateDoctorSelect();
         renderDoctorList();
+        // Also remove all roster rules for this doctor
+        firebaseLoad('roster/rules', []).then(rules => {
+            const cleaned = rules.filter(r => r.doc !== docName);
+            if (cleaned.length !== rules.length) {
+                firebaseSave('roster/rules', cleaned).then(() => {
+                    invalidateRosterCache();
+                    loadRosterAdmin();
+                });
+            }
+        });
     });
 }
 
